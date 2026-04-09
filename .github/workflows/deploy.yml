@@ -23,6 +23,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Clear server www folder
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: rm -rf ~/www && mkdir -p ~/www
+
       - name: Deploy to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -31,3 +39,12 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           source: dist/
           target: ~/www
+          strip_components: 1
+
+      - name: Ensure http-server service is running
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: systemctl --user is-active --quiet "http-server@${{ vars.HTTP_PORT }}" || systemctl --user start "http-server@${{ vars.HTTP_PORT }}"
