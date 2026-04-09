@@ -7,6 +7,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '#/lib/AuthContext'
+import { signOutUser } from '#/lib/firebase'
 
 export const Route = createRootRoute({
   component: RootDocument,
