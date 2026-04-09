@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as FormulateRouteImport } from './routes/formulate'
+import { Route as CustomSquadRouteImport } from './routes/custom-squad'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PlanRoute = PlanRouteImport.update({
@@ -29,6 +30,11 @@ const FormulateRoute = FormulateRouteImport.update({
   path: '/formulate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomSquadRoute = CustomSquadRouteImport.update({
+  id: '/custom-squad',
+  path: '/custom-squad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
   '/plan': typeof PlanRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/formulate' | '/learn' | '/plan'
+  fullPaths: '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/formulate' | '/learn' | '/plan'
-  id: '__root__' | '/' | '/formulate' | '/learn' | '/plan'
+  to: '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
+  id: '__root__' | '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CustomSquadRoute: typeof CustomSquadRoute
   FormulateRoute: typeof FormulateRoute
   LearnRoute: typeof LearnRoute
   PlanRoute: typeof PlanRoute
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormulateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/custom-squad': {
+      id: '/custom-squad'
+      path: '/custom-squad'
+      fullPath: '/custom-squad'
+      preLoaderRoute: typeof CustomSquadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CustomSquadRoute: CustomSquadRoute,
   FormulateRoute: FormulateRoute,
   LearnRoute: LearnRoute,
   PlanRoute: PlanRoute,
