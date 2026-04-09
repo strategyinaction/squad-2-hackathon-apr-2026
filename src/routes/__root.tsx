@@ -1,7 +1,5 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import Footer from '../components/Footer'
-import Header from '../components/Header'
 
 export const Route = createRootRoute({
   component: RootDocument,
@@ -10,9 +8,9 @@ export const Route = createRootRoute({
 function RootDocument() {
   return (
     <>
-      <Header />
-      <Outlet />
-      <Footer />
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <Outlet />
+      </main>
       <TanStackRouterDevtools position="bottom-right" />
     </>
   )
