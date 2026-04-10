@@ -9,7 +9,7 @@ import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton
 import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
 import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
 import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
-import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD } from '#/lib/api/personas'
+import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD, useDeletePersonaJTBD } from '#/lib/api/personas'
 import type { CanvasJTBD } from '#/components/VisionCanvas'
 
 export const Route = createFileRoute('/formulate')({ component: FormulateStrategyPage })
@@ -106,6 +106,7 @@ function FormulateStrategyContent() {
   const addPersona = useAddPersona()
   const updatePersonaJTBD = useUpdatePersonaJTBD()
   const addPersonaJTBD = useAddPersonaJTBD()
+  const deletePersonaJTBD = useDeletePersonaJTBD()
 
   const visionLoading = visionCardLoading || calloutsLoading
   const personasLoading = personasItemsLoading || jtbdsLoading
@@ -151,17 +152,22 @@ function FormulateStrategyContent() {
       const personaData = { title: persona.label, description: persona.quote, order_value: pIndex + 1 }
       if (!isNaN(numId)) {
         updatePersona.mutate({ id: numId, data: personaData })
-        // Update JTBDs for existing persona
+        // Update/add JTBDs for existing persona
+        const existingJtbds = jtbdItems?.filter(j => j.parent_id === numId) ?? []
         persona.jtbds.forEach((jtbd, jIndex) => {
           const title = jtbdTitle(jtbd)
           const inst = typeof jtbd !== 'string' ? jtbd.institutionalTemplate ?? null : null
           const cog = typeof jtbd !== 'string' ? jtbd.cognitiveAutomation ?? null : null
-          const existingJtbd = jtbdItems?.filter(j => j.parent_id === numId)[jIndex]
+          const existingJtbd = existingJtbds[jIndex]
           if (existingJtbd) {
             updatePersonaJTBD.mutate({ id: existingJtbd.id, data: { title, subtitle: inst, description: cog, order_value: jIndex + 1 } })
           } else {
             addPersonaJTBD.mutate({ type: 'persona_jtbd', title, subtitle: inst, description: cog, order_value: jIndex + 1, parent_id: numId })
           }
+        })
+        // Delete JTBDs that were removed
+        existingJtbds.slice(persona.jtbds.length).forEach(j => {
+          deletePersonaJTBD.mutate(j.id)
         })
       } else {
         addPersona.mutate({ type: 'persona', ...personaData, subtitle: null, parent_id: null })

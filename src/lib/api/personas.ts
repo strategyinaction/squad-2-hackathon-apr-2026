@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createItem, readItems, updateItem } from '@directus/sdk'
+import { createItem, deleteItem, readItems, updateItem } from '@directus/sdk'
 import { directus, type ContentItem } from '#/lib/directus'
 
 export function usePersonas(prefix = '') {
@@ -72,6 +72,17 @@ export function useAddPersonaJTBD(prefix = '') {
   return useMutation({
     mutationFn: (data: Omit<ContentItem, 'id'>) =>
       directus.request(createItem('contents', data)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [type] })
+    },
+  })
+}
+
+export function useDeletePersonaJTBD(prefix = '') {
+  const type = prefix ? `${prefix}_persona_jtbd` : 'persona_jtbd'
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => directus.request(deleteItem('contents', id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [type] })
     },
