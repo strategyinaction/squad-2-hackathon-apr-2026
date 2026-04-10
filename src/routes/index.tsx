@@ -657,10 +657,10 @@ function OverviewContent() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleFunctionsDragEnd}>
               <SortableContext items={functions.map(f => f.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-2 gap-4">
-                  {functions.map(fn => (
+                  {functions.map((fn, fnIndex) => (
                     <SortableRow key={fn.id} id={fn.id}>
                       {({ handleProps }) => (
-                        <div className={cn('rounded-xl border p-5 relative', fn.isPrimary ? 'bg-primary-faded border-primary/10' : 'bg-shell border-border')}>
+                        <div className={cn('rounded-xl border p-5 relative', fnIndex === 0 ? 'bg-primary-faded border-primary/10' : 'bg-shell border-border')}>
                           {functionsEditing ? (
                             <>
                               <div className="flex items-center gap-2 mb-2">
@@ -673,13 +673,13 @@ function OverviewContent() {
                                   </button>
                                 )}
                               </div>
-                              <input value={fn.title} onChange={e => setFunctions(prev => prev.map(f => f.id === fn.id ? { ...f, title: e.target.value } : f))} className={cn('block w-full border-b border-border text-sm font-bold bg-transparent focus:outline-none mb-2', fn.isPrimary ? 'text-primary' : 'text-heading')} placeholder="Function title" />
+                              <input value={fn.title} onChange={e => setFunctions(prev => prev.map(f => f.id === fn.id ? { ...f, title: e.target.value } : f))} className={cn('block w-full border-b border-border text-sm font-bold bg-transparent focus:outline-none mb-2', fnIndex === 0 ? 'text-primary' : 'text-heading')} placeholder="Function title" />
                               <textarea value={fn.body} onChange={e => setFunctions(prev => prev.map(f => f.id === fn.id ? { ...f, body: e.target.value } : f))} rows={3} className="block w-full border border-border rounded-lg p-1.5 text-sm leading-relaxed bg-white focus:outline-none resize-none text-foreground" placeholder="Describe this function..." />
                             </>
                           ) : (
                             <>
-                              <HighlightedText as="p" sectionId="overview-functions" text={fn.title} className={cn('text-sm font-bold mb-2', fn.isPrimary ? 'text-primary' : 'text-heading')} />
-                              <HighlightedText as="p" sectionId="overview-functions" text={fn.body} className={cn('text-sm leading-relaxed', fn.isPrimary ? 'text-foreground' : 'text-muted-foreground')} />
+                              <HighlightedText as="p" sectionId="overview-functions" text={fn.title} className={cn('text-sm font-bold mb-2', fnIndex === 0 ? 'text-primary' : 'text-heading')} />
+                              <HighlightedText as="p" sectionId="overview-functions" text={fn.body} className={cn('text-sm leading-relaxed', fnIndex === 0 ? 'text-foreground' : 'text-muted-foreground')} />
                             </>
                           )}
                         </div>
