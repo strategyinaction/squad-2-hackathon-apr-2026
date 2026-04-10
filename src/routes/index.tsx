@@ -497,7 +497,7 @@ function OverviewContent() {
         <div className="flex-1 min-w-0">
 
           {/* ── Hero ── */}
-          <CommentableRegion id="overview-hero" label="Vision & Positioning" className="rounded-2xl bg-primary text-white p-8 mb-6 relative">
+          <CommentableRegion id="overview-hero" label="Vision & Positioning" contentId={headerItem?.id} className="rounded-2xl bg-primary text-white p-8 mb-6 relative">
 
             {/* Hero edit controls */}
             <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10" onMouseUp={e => e.stopPropagation()}>
@@ -542,7 +542,7 @@ function OverviewContent() {
                   {hero.blocks.map(block => (
                     <SortableRow key={block.id} id={block.id}>
                       {({ handleProps }) => (
-                        <CommentableRegion id={`hero-block-${block.id}`} label={block.title} className="rounded-xl min-w-[140px]">
+                        <CommentableRegion id={`hero-block-${block.id}`} label={block.title} contentId={Number(block.id)} className="rounded-xl min-w-[140px]">
                         <div
                           className={cn('bg-white/10 border border-white/20 rounded-xl px-4 py-3 relative transition-colors', !heroEditing && 'cursor-pointer hover:bg-white/20')}
                           onPointerDown={!heroEditing ? onBlockPointerDown : undefined}
@@ -593,7 +593,7 @@ function OverviewContent() {
           </CommentableRegion>
 
           {/* ── Two Core Functions ── */}
-          <CommentableRegion id="overview-functions" label={coreFunctionsTitle(functions.length)} className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
+          <CommentableRegion id="overview-functions" label={coreFunctionsTitle(functions.length)} contentId={coreFunctionsSectionItem?.id} className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
             <div className="flex items-center justify-between gap-2 mb-5">
               <div className="flex items-center gap-2">
                 <EmojiObjects className="w-5 h-5 text-primary" />
@@ -624,7 +624,7 @@ function OverviewContent() {
                   {functions.map((fn, fnIndex) => (
                     <SortableRow key={fn.id} id={fn.id}>
                       {({ handleProps }) => (
-                        <CommentableRegion id={`fn-${fn.id}`} label={fn.title} className="rounded-xl">
+                        <CommentableRegion id={`fn-${fn.id}`} label={fn.title} contentId={Number(fn.id)} className="rounded-xl">
                         <div className={cn('rounded-xl border p-5 relative', fnIndex === 0 ? 'bg-primary-faded border-primary/10' : 'bg-shell border-border')}>
                           {functionsEditing ? (
                             <>
