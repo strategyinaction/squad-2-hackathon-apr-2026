@@ -2,6 +2,7 @@ import { type ComponentType, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
+import { LogoutButton } from '#/components/LogoutButton'
 import { Card, Button } from '#/components/ui'
 import { cn } from '#/lib/utils'
 import {
@@ -441,7 +442,7 @@ function OverviewContent() {
       <PageHeader
         title="Strategy in Action Product Vision"
         subtitle="A living document for product squads. Read, challenge, and contribute to the platform vision."
-        actions={<><ExportButton /><CommentsToggleButton /></>}
+        actions={<><ExportButton /><CommentsToggleButton /><LogoutButton /></>}
       />
 
       <div className="flex gap-6">

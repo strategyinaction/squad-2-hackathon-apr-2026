@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useLocation } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
+import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasPoint, CanvasSuccess } from '#/components/VisionCanvas'
@@ -73,7 +74,7 @@ function FormulateStrategyContent() {
         title="Formulate Strategy"
         subtitle="Making Better Strategic Choices — which ELT can commit on, in a fast and inexpensive way."
         breadcrumbs={[{ label: 'Product Vision', to: '..' }, { label: 'Formulate Strategy' }]}
-        actions={<><ExportButton /><CommentsToggleButton /></>}
+        actions={<><ExportButton /><CommentsToggleButton /><LogoutButton /></>}
       />
       <div className="flex gap-6">
         <CommentableRegion id="formulate-canvas" label="Vision Canvas" className="flex-1 min-w-0">

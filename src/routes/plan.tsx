@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useLocation } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
+import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasPoint, CanvasSuccess } from '#/components/VisionCanvas'
@@ -84,7 +85,7 @@ function StrategicPlanContent() {
         title="Strategic Plan"
         subtitle="Translating strategy into plans people can own and commit to — with coherent cascade, hypothesis-driven charters, and living financial links."
         breadcrumbs={[{ label: 'Product Vision', to: '..' }, { label: 'Strategic Plan' }]}
-        actions={<><ExportButton /><CommentsToggleButton /></>}
+        actions={<><ExportButton /><CommentsToggleButton /><LogoutButton /></>}
       />
       <div className="flex gap-6">
         <CommentableRegion id="plan-canvas" label="Vision Canvas" className="flex-1 min-w-0">

@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useLocation } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
+import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasPoint, CanvasSuccess } from '#/components/VisionCanvas'
@@ -87,7 +88,7 @@ function LearnAdaptContent() {
         title="Learn & Adapt"
         subtitle="Extracting meaning from execution and turning insights into timely, cascaded decisions."
         breadcrumbs={[{ label: 'Product Vision', to: '..' }, { label: 'Learn & Adapt' }]}
-        actions={<><ExportButton /><CommentsToggleButton /></>}
+        actions={<><ExportButton /><CommentsToggleButton /><LogoutButton /></>}
       />
       <div className="flex gap-6">
         <CommentableRegion id="learn-canvas" label="Vision Canvas" className="flex-1 min-w-0">

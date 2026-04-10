@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
+import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasPoint, CanvasSuccess } from '#/components/VisionCanvas'
@@ -35,7 +36,7 @@ function CustomSquadContent() {
         title="New Platform Area"
         subtitle="Use the canvas below to define this platform area's vision, target group, needs, product, and goals."
         breadcrumbs={[{ label: 'Product Vision', to: '..' }, { label: 'New Platform Area' }]}
-        actions={<><ExportButton /><CommentsToggleButton /></>}
+        actions={<><ExportButton /><CommentsToggleButton /><LogoutButton /></>}
       />
       <div className="flex gap-6">
         <CommentableRegion id="custom-canvas" label="Vision Canvas" className="flex-1 min-w-0">

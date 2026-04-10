@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as FormulateRouteImport } from './routes/formulate'
 import { Route as CustomSquadRouteImport } from './routes/custom-squad'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LearnRoute = LearnRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
+  '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
+  '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/custom-squad': typeof CustomSquadRoute
   '/formulate': typeof FormulateRoute
   '/learn': typeof LearnRoute
+  '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
+  fullPaths:
+    | '/'
+    | '/custom-squad'
+    | '/formulate'
+    | '/learn'
+    | '/login'
+    | '/plan'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
-  id: '__root__' | '/' | '/custom-squad' | '/formulate' | '/learn' | '/plan'
+  to: '/' | '/custom-squad' | '/formulate' | '/learn' | '/login' | '/plan'
+  id:
+    | '__root__'
+    | '/'
+    | '/custom-squad'
+    | '/formulate'
+    | '/learn'
+    | '/login'
+    | '/plan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +98,7 @@ export interface RootRouteChildren {
   CustomSquadRoute: typeof CustomSquadRoute
   FormulateRoute: typeof FormulateRoute
   LearnRoute: typeof LearnRoute
+  LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
 }
 
@@ -86,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learn': {
@@ -124,6 +154,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomSquadRoute: CustomSquadRoute,
   FormulateRoute: FormulateRoute,
   LearnRoute: LearnRoute,
+  LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
 }
 export const routeTree = rootRouteImport
