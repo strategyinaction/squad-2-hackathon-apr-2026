@@ -324,9 +324,6 @@ function OverviewContent() {
   const updatePlatformArea = useUpdatePlatformArea()
   const { data: allComments, refetch: refetchComments } = useComments()
   const commentsCtx = useCommentsCtx()
-  useEffect(() => {
-    if (commentsCtx?.panelOpen) refetchComments()
-  }, [commentsCtx?.panelOpen])
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
@@ -345,6 +342,47 @@ function OverviewContent() {
       }
     }))
   }, [platformAreasItems, squadsEditing])
+
+  // ── Sync Directus comments into panel context when panel opens ──────────────
+  useEffect(() => {
+    if (!commentsCtx?.panelOpen) return
+    refetchComments().then(({ data }) => {
+      if (!data) return
+      // Build content_id → { sectionId, sectionLabel } map from all known entities
+      const sectionMap = new Map<number, { sectionId: string; sectionLabel: string }>()
+      if (headerItem) sectionMap.set(headerItem.id, { sectionId: 'overview-hero', sectionLabel: 'Vision & Positioning' })
+      hero.blocks.forEach(b => {
+        const n = Number(b.id)
+        if (!isNaN(n)) sectionMap.set(n, { sectionId: `hero-block-${b.id}`, sectionLabel: b.title })
+      })
+      if (coreFunctionsSectionItem) sectionMap.set(coreFunctionsSectionItem.id, { sectionId: 'overview-functions', sectionLabel: 'Core Functions' })
+      functions.forEach(fn => {
+        const n = Number(fn.id)
+        if (!isNaN(n)) sectionMap.set(n, { sectionId: `fn-${fn.id}`, sectionLabel: fn.title })
+      })
+      squads.forEach(sq => sectionMap.set(sq.contentId, { sectionId: `squad-${sq.id}`, sectionLabel: sq.name }))
+      const mapped = data.map(item => {
+        const section = sectionMap.get(item.content_id) ?? { sectionId: String(item.content_id), sectionLabel: 'Unknown' }
+        const initials = item.author.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+        return {
+          id: String(item.id),
+          type: item.type,
+          sectionId: section.sectionId,
+          sectionLabel: section.sectionLabel,
+          selectedText: '',
+          body: item.text,
+          author: item.author,
+          initials,
+          createdAt: getRelativeTime(item.date_created),
+          likes: 0,
+          liked: false,
+          resolved: false,
+          attachments: [],
+        }
+      })
+      commentsCtx.loadComments(mapped)
+    })
+  }, [commentsCtx?.panelOpen])
 
   // ── Block details state ─────────────────────────────────────────────────────
   const [blockDetails, setBlockDetails] = useState<Record<string, ItemDetailData>>({})

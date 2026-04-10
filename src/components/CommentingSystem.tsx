@@ -60,6 +60,7 @@ export interface Comment {
 interface CommentsCtx {
   comments: Comment[];
   addComment: (data: Omit<Comment, 'id' | 'likes' | 'liked' | 'resolved'>) => void;
+  loadComments: (comments: Comment[]) => void;
   editComment: (id: string, body: string) => void;
   likeComment: (id: string) => void;
   resolveComment: (id: string) => void;
@@ -97,6 +98,10 @@ export function CommentProvider({
     setPanelOpen(true); // Auto-open panel when a comment is added
   }, []);
 
+  const loadComments = useCallback((incoming: Comment[]) => {
+    setComments(incoming);
+  }, []);
+
   const editComment = useCallback((id: string, body: string) => {
     setComments(p => p.map(c => c.id === id ? { ...c, body } : c));
   }, []);
@@ -110,7 +115,7 @@ export function CommentProvider({
   }, []);
 
   return (
-    <CommentsContext.Provider value={{ comments, addComment, editComment, likeComment, resolveComment, activeHighlight, setActiveHighlight, activeRegionId, setActiveRegionId, panelOpen, setPanelOpen, typeFilter, setTypeFilter }}>
+    <CommentsContext.Provider value={{ comments, addComment, loadComments, editComment, likeComment, resolveComment, activeHighlight, setActiveHighlight, activeRegionId, setActiveRegionId, panelOpen, setPanelOpen, typeFilter, setTypeFilter }}>
       {children}
     </CommentsContext.Provider>
   );
