@@ -3,8 +3,6 @@ import { useHeader, useUpdateHeader } from '#/lib/api/header'
 import { useHeaderCards, useUpdateHeaderCard, useAddHeaderCard } from '#/lib/api/headerCards'
 import { useCoreFunctionsSection, useUpdateCoreFunctionsSection } from '#/lib/api/coreFunctionsSection'
 import { useCoreFunctions, useUpdateCoreFunction, useAddCoreFunction, useDeleteCoreFunction } from '#/lib/api/coreFunctions'
-import { usePlatformAreas } from '#/lib/api/platformAreas'
-import { useComments } from '#/lib/api/comments'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
@@ -67,10 +65,16 @@ interface Squad {
   name: string;
   tagline: string;
   description: string;
+  commentCounts: Partial<Record<'idea' | 'feedback' | 'challenge' | 'question', number>>;
+  path: string;
+}
+
+interface SquadUIConfig {
   icon: IconComp;
   accentBg: string;
   fadedBg: string;
   textColor: string;
+  commentCounts: Partial<Record<'idea' | 'feedback' | 'challenge' | 'question', number>>;
   path: string;
   contentId?: number;
 }
@@ -86,13 +90,10 @@ function coreFunctionsTitle(count: number) {
   return `${word} Core ${count === 1 ? 'Function' : 'Functions'}`
 }
 
-const INITIAL_SQUADS: Squad[] = [
+// Static UI config per position (sorted by order_value from backend).
+// Icon, colours and path are app-level concerns not stored in the backend.
+const SQUAD_UI_CONFIG: SquadUIConfig[] = [
   {
-    id: 'formulate',
-    name: 'Formulate Strategy',
-    tagline: 'Making Better Strategic Choices',
-    description:
-      'Turning strategic intent into explicit, testable choices. Covering where to play, how to win, and how to operate — with AI compressing analytical weeks into hours.',
     icon: Target as IconComp,
     accentBg: 'bg-primary',
     fadedBg: 'bg-primary-faded',
@@ -100,11 +101,6 @@ const INITIAL_SQUADS: Squad[] = [
     path: '/formulate',
   },
   {
-    id: 'plan',
-    name: 'Strategic Plan',
-    tagline: 'Translating Strategy into Plans',
-    description:
-      'Breaking strategic choices into prioritised initiatives, OKRs, and financial plans — with coherent cascade from corporate to team level and living hypothesis-driven charters.',
     icon: Lan as IconComp,
     accentBg: 'bg-warning',
     fadedBg: 'bg-warning-faded',
@@ -112,11 +108,6 @@ const INITIAL_SQUADS: Squad[] = [
     path: '/plan',
   },
   {
-    id: 'learn',
-    name: 'Learn & Adapt',
-    tagline: 'Extracting Meaning from Execution',
-    description:
-      'Capturing structured learning from execution, synthesising insights into timely decisions, and cascading adaptations instantly across all affected plans and teams.',
     icon: School as IconComp,
     accentBg: 'bg-success',
     fadedBg: 'bg-success-faded',
@@ -124,6 +115,14 @@ const INITIAL_SQUADS: Squad[] = [
     path: '/learn',
   },
 ]
+const DEFAULT_SQUAD_UI: SquadUIConfig = {
+  icon: EmojiObjects as IconComp,
+  accentBg: 'bg-muted',
+  fadedBg: 'bg-shell',
+  textColor: 'text-muted-foreground',
+  commentCounts: {},
+  path: '/custom-squad',
+}
 
 function getInitials(author: string): string {
   return author.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
@@ -340,31 +339,11 @@ function OverviewContent() {
   }, [coreFunctionsItems, functionsEditing])
 
   // ── Platform Areas state ────────────────────────────────────────────────────
+  const { data: platformAreasItems } = usePlatformAreas()
+  const updatePlatformArea = useUpdatePlatformArea()
   const [squadsEditing, setSquadsEditing] = useState(false)
-  const [squads, setSquads] = useState<Squad[]>(INITIAL_SQUADS)
+  const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
-
-  // ── Comments from Directus ──────────────────────────────────────────────────
-  const { data: platformAreas } = usePlatformAreas()
-  const { data: allComments } = useComments()
-
-  const squadNameToContentId = useMemo<Map<string, number>>(() => {
-    const map = new Map<string, number>()
-    platformAreas?.forEach(area => {
-      if (area.title) map.set(area.title.trim().toLowerCase(), area.id)
-    })
-    return map
-  }, [platformAreas])
-
-  useEffect(() => {
-    if (!platformAreas) return
-    setSquads(prev =>
-      prev.map(squad => ({
-        ...squad,
-        contentId: squadNameToContentId.get(squad.name.trim().toLowerCase()),
-      }))
-    )
-  }, [platformAreas, squadNameToContentId])
 
   // ── Block details state ─────────────────────────────────────────────────────
   const [blockDetails, setBlockDetails] = useState<Record<string, ItemDetailData>>({})
@@ -439,7 +418,15 @@ function OverviewContent() {
 
   // ── Squads edit lifecycle ───────────────────────────────────────────────────
   function beginSquadsEdit() { setSquadsSnap([...squads]); setSquadsEditing(true) }
-  function doneSquadsEdit() { setSquadsSnap(null); setSquadsEditing(false) }
+  function doneSquadsEdit() {
+    setSquadsSnap(null); setSquadsEditing(false)
+    squads.forEach((squad, index) => {
+      const numId = Number(squad.id)
+      if (!isNaN(numId)) {
+        updatePlatformArea.mutate({ id: numId, data: { title: squad.name, subtitle: squad.tagline, description: squad.description, order_value: index } })
+      }
+    })
+  }
   function cancelSquadsEdit() {
     if (squadsSnap) setSquads(squadsSnap)
     setSquadsSnap(null); setSquadsEditing(false)
@@ -710,8 +697,8 @@ function OverviewContent() {
               <SortableContext items={squads.map(s => s.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {squads.map((squad, squadIdx) => {
-                    const Icon = squad.icon
                     const squadNumber = String(squadIdx + 1).padStart(2, '0')
+                    const { icon: Icon, accentBg, fadedBg, textColor } = SQUAD_UI_CONFIG[squadIdx] ?? DEFAULT_SQUAD_UI
                     const TYPE_BADGE_STYLES = { idea: 'bg-primary-faded text-primary', feedback: 'bg-warning-faded text-warning', challenge: 'bg-destructive-faded text-destructive', question: 'bg-muted text-muted-foreground' } as const
                     return (
                       <SortableRow key={squad.id} id={squad.id}>
@@ -720,7 +707,7 @@ function OverviewContent() {
                           <Card className="flex flex-col shadow-xsmall rounded-xl border border-border overflow-hidden">
                             <div className="px-5 pt-5 pb-4 flex-1">
                               <div className="flex items-start justify-between gap-3 mb-4">
-                                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', squad.accentBg)}>
+                                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', accentBg)}>
                                   <Icon className="w-5 h-5 text-white" />
                                 </div>
                                 {squadsEditing ? (
@@ -733,7 +720,7 @@ function OverviewContent() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <span className={cn('text-3xl font-black leading-none', squad.fadedBg === 'bg-primary-faded' ? 'text-primary/15' : squad.fadedBg === 'bg-warning-faded' ? 'text-warning/15' : squad.fadedBg === 'bg-success-faded' ? 'text-success/15' : 'text-muted/30')}>
+                                  <span className={cn('text-3xl font-black leading-none', fadedBg === 'bg-primary-faded' ? 'text-primary/15' : fadedBg === 'bg-warning-faded' ? 'text-warning/15' : fadedBg === 'bg-success-faded' ? 'text-success/15' : 'text-muted/30')}>
                                     {squadNumber}
                                   </span>
                                 )}
@@ -741,18 +728,18 @@ function OverviewContent() {
                               {squadsEditing ? (
                                 <div className="flex flex-col gap-2">
                                   <input value={squad.name} onChange={e => updateSquad(squad.id, 'name', e.target.value)} className="block w-full border-b border-border text-sm font-bold text-heading bg-transparent focus:outline-none" placeholder="Squad name" />
-                                  <input value={squad.tagline} onChange={e => updateSquad(squad.id, 'tagline', e.target.value)} className={cn('block w-full border-b border-border text-xs font-semibold bg-transparent focus:outline-none', squad.textColor)} placeholder="Tagline" />
+                                  <input value={squad.tagline} onChange={e => updateSquad(squad.id, 'tagline', e.target.value)} className={cn('block w-full border-b border-border text-xs font-semibold bg-transparent focus:outline-none', textColor)} placeholder="Tagline" />
                                   <textarea value={squad.description} onChange={e => updateSquad(squad.id, 'description', e.target.value)} rows={3} className="block w-full border border-border rounded-lg p-2 text-xs text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none" placeholder="Describe this platform area..." />
                                 </div>
                               ) : (
                                 <>
                                   <HighlightedText as="h4" sectionId="overview-platform-areas" text={squad.name} className="text-sm font-bold text-heading mb-0.5" />
-                                  <HighlightedText as="p" sectionId="overview-platform-areas" text={squad.tagline} className={cn('text-xs font-semibold mb-2', squad.textColor)} />
+                                  <HighlightedText as="p" sectionId="overview-platform-areas" text={squad.tagline} className={cn('text-xs font-semibold mb-2', textColor)} />
                                   <HighlightedText as="p" sectionId="overview-platform-areas" text={squad.description} className="text-xs text-muted-foreground leading-relaxed" />
                                 </>
                               )}
                             </div>
-                            <div className={cn('px-5 py-3 border-t border-border flex items-center justify-between', squad.fadedBg)}>
+                            <div className={cn('px-5 py-3 border-t border-border flex items-center justify-between', fadedBg)}>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {(() => {
                                   const counts = (allComments ?? [])
