@@ -131,6 +131,9 @@ export interface VisionCanvasProps {
   visionLoading?: boolean;
   onSavePersonas?: (personas: CanvasPersona[]) => void;
   personasLoading?: boolean;
+  onSavePains?: (pains: CanvasPain[], subtitle?: string) => void;
+  onSaveSolutions?: (solutions: CanvasSolution[]) => void;
+  painsLoading?: boolean;
 }
 
 // ─── Shared item detail ───────────────────────────────────────────────────────
@@ -433,6 +436,9 @@ export function VisionCanvas({
   visionLoading = false,
   onSavePersonas,
   personasLoading = false,
+  onSavePains,
+  onSaveSolutions,
+  painsLoading = false,
 }: VisionCanvasProps) {
   const commentsCtx = useCommentsCtx();
   const panelOpen = commentsCtx?.panelOpen ?? false;
@@ -531,8 +537,8 @@ export function VisionCanvas({
       });
       onSavePersonas?.(data.personas);
     }
-    if (section === 'needs')     { setNeedsSnap(null);     setNeedsEditing(false);     }
-    if (section === 'relievers') { setRelieversSnap(null); setRelieversEditing(false); }
+    if (section === 'needs')     { setNeedsSnap(null);     setNeedsEditing(false);     onSavePains?.(data.pains, data.painSubtitle); }
+    if (section === 'relievers') { setRelieversSnap(null); setRelieversEditing(false); onSaveSolutions?.(data.solutions); }
     if (section === 'goals')     { setGoalsSnap(null);     setGoalsEditing(false);     }
   }
 
@@ -858,7 +864,12 @@ export function VisionCanvas({
       </div>
 
       {/* ── Pains | Pain Relievers — 50/50 ── */}
-      <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
+      <div className="grid grid-cols-2 divide-x divide-border border-b border-border relative">
+        {painsLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
 
         {/* ── Pains ── */}
         <CanvasCell

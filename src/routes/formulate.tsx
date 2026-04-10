@@ -6,72 +6,16 @@ import { ExportButton } from '#/components/ExportButton'
 import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
-import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
+import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution, CanvasJTBD } from '#/components/VisionCanvas'
 import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
 import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
 import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD, useDeletePersonaJTBD } from '#/lib/api/personas'
-import type { CanvasJTBD } from '#/components/VisionCanvas'
+import { usePainSection, usePains, useUpdatePainSection, useAddPainSection, useUpdatePain, useAddPain } from '#/lib/api/pains'
+import { usePainRelievers, useUpdatePainReliever, useAddPainReliever } from '#/lib/api/painRelievers'
 
 export const Route = createFileRoute('/formulate')({ component: FormulateStrategyPage })
 
-// ─── Static Canvas Data (personas + vision fetched from API) ─────────────────
-
-const PAINS: CanvasPain[] = [
-  { id: 1, title: 'The analytical burden is crushing', description: 'Gathering, processing, and synthesising market data, competitive signals, and internal capabilities requires weeks of manual effort. By the time analysis is ready, some of it is already stale. Every cycle the analyses are repeated from the beginning, without ever building a growing knowledge base.', personaIds: ['elt'] },
-  { id: 2, title: 'No shared language for strategic reasoning', description: 'Every organisation, and every consultant, uses different terminology, frameworks, and structures. This makes it nearly impossible to compare, aggregate, or learn across units. Strategic reasoning stays locked in individual heads and laptops instead of becoming an institutional asset.' },
-  { id: 3, title: 'Strategic choices are poorly articulated', description: 'Strategies are expressed as vague aspirations rather than explicit, testable hypotheses. The assumptions underlying a strategic choice — why we believe this will work — are rarely surfaced, let alone documented.', personaIds: ['elt'] },
-  { id: 4, title: "Strategy formulation doesn't cascade below corporate level", description: 'In large, distributed organisations, every BU operates in a different competitive context. Yet the full rigour of strategic analysis is almost never replicated at granular levels. The cost is prohibitive.', personaIds: ['elt'] },
-  { id: 5, title: 'The consultant leaves, and the strategy walks out the door', description: 'Consultants develop deep contextual understanding during formulation, but that knowledge is not transferred into any institutional system. When the engagement ends, the reasoning behind choices disappears.', personaIds: ['consultants'] },
-  { id: 6, title: 'No structured handoff to execution', description: 'Formulation outputs — choices, assumptions, hypotheses — are expressed in narrative form, not in a structured format that execution teams can operationalise. The strategy-to-execution bridge is a manual, lossy translation.' },
-  { id: 7, title: 'The analytical grind consumes most of the engagement budget', description: 'Consultants spend the overwhelming majority of their time on low-value manual work: gathering data, cleaning spreadsheets, building market-sizing models. A typical strategy engagement runs to 400–500 person-days, yet only 10–15% of that effort is spent on high-touch strategic discussions that actually move the needle.', personaIds: ['consultants'] },
-  { id: 8, title: 'Quality is hostage to individual capability', description: "Without a standardised methodology enforced by tooling, the quality of strategic outputs varies enormously depending on who runs the engagement. The firm's capacity is bottlenecked by its best people, and reputational risk scales with every engagement staffed by a less experienced team.", personaIds: ['consultants'] },
-  { id: 9, title: 'Slide production crowds out strategic thinking', description: "Enormous effort goes into producing the deliverable — the deck, the report, the board pack — rather than producing the thinking. Formatting, aligning charts, writing narratives, managing document versions: this is communication work, not strategy work. Yet it consumes a disproportionate share of the consultant's time.", personaIds: ['consultants'] },
-]
-
-const SOLUTIONS: CanvasSolution[] = [
-  {
-    id: 1,
-    title: 'AI Researcher & Business Analyst agents',
-    description: 'Scan financial reports, market data, competitive intelligence, and internal metrics to deliver curated, business-ready insights on demand. Data-to-insight in hours, not weeks — compressing what once took 400–500 person-days.',
-    painIds: [1, 7],
-  },
-  {
-    id: 2,
-    title: 'Strategy in Action Canvas — shared ontology',
-    description: 'A standard, universal framework for business strategy enforced across all units and engagements. Enables meaningful comparison, aggregation, and cross-pollination of strategic thinking — and makes cascade possible below corporate level.',
-    painIds: [2, 4, 8],
-  },
-  {
-    id: 3,
-    title: 'Explicit hypothesis and assumption registry',
-    description: 'Every strategic choice captures the From→To shift, the underlying insights, and the assumptions that need to hold. Options considered and discarded are preserved — not lost. Auditable trail linking each choice to its evidence.',
-    painIds: [3, 6],
-  },
-  {
-    id: 4,
-    title: 'Strategy Digital Twin',
-    description: "A living, machine-readable mirror of the organisation's strategy captured in a unified Knowledge Graph. Strategic reasoning becomes institutional capital rather than walking out the door with the consultant at the end of each engagement.",
-    painIds: [5, 6],
-  },
-  {
-    id: 5,
-    title: 'Communicator agent — automated narratives',
-    description: 'Drafts reports, executive summaries, and communication artefacts from the structured insight library — adapting tone, detail level, and emphasis for different audiences. Communication work no longer crowds out strategic thinking.',
-    painIds: [9],
-  },
-  {
-    id: 6,
-    title: 'AI quality floor and variance reduction',
-    description: 'Structured templates, methodology libraries, and AI quality control reduce variance across BUs and consultants. Every formulation follows a rigorous structure regardless of local capability or engagement staffing.',
-    painIds: [2, 8],
-  },
-  {
-    id: 7,
-    title: 'Structured handoff to execution',
-    description: 'Formulation outputs — choices, assumptions, hypotheses — are structured in machine-readable format, directly connected to strategic plans, priorities, and OKRs. No manual, lossy translation across the strategy-execution boundary.',
-    painIds: [3, 6],
-  },
-]
+// ─── Static Canvas Data (success items remain static for now) ────────────────
 
 const SUCCESS_ITEMS: CanvasSuccess[] = [
   { id: 1, title: 'Strategy formulation takes weeks, not months', detail: 'AI-powered research and analysis compress the data-gathering phase from weeks of manual effort to hours of curated insights, enabling strategy to be performed frequently rather than once every few years.' },
@@ -82,6 +26,20 @@ const SUCCESS_ITEMS: CanvasSuccess[] = [
   { id: 6, title: 'Governance is customised per engagement', detail: 'Different organisations have different governance and organisational requirements. The platform supports configurable organisational and governance structures, without requiring a one-size-fits-all methodology.' },
   { id: 7, title: 'Strategy is de-mystified', detail: "When someone reads a strategy inside this module, it's clear, meaningful, specific, and makes a lot of sense. It is not a declaration of intent, it is not a slogan, it is not a deck of 150 slides of analysis." },
 ]
+
+// ─── Helpers: map Directus content items → Canvas types ──────────────────────
+
+/** subtitle stores comma-separated persona content IDs → string[] */
+function parsePersonaIds(subtitle: string | null): string[] {
+  if (!subtitle) return []
+  return subtitle.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+/** subtitle stores comma-separated pain content IDs → number[] */
+function parsePainIds(subtitle: string | null): number[] {
+  if (!subtitle) return []
+  return subtitle.split(',').map(s => Number.parseInt(s.trim(), 10)).filter(n => !Number.isNaN(n))
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -108,8 +66,22 @@ function FormulateStrategyContent() {
   const addPersonaJTBD = useAddPersonaJTBD()
   const deletePersonaJTBD = useDeletePersonaJTBD()
 
+  // Pain hooks
+  const { data: painSection, isLoading: painSectionLoading } = usePainSection()
+  const { data: painItems, isLoading: painsLoading } = usePains()
+  const updatePainSection = useUpdatePainSection()
+  const addPainSection = useAddPainSection()
+  const updatePain = useUpdatePain()
+  const addPain = useAddPain()
+
+  // Pain reliever hooks
+  const { data: painRelieverItems, isLoading: painRelieversLoading } = usePainRelievers()
+  const updatePainReliever = useUpdatePainReliever()
+  const addPainReliever = useAddPainReliever()
+
   const visionLoading = visionCardLoading || calloutsLoading
   const personasLoading = personasItemsLoading || jtbdsLoading
+  const painsAllLoading = painSectionLoading || painsLoading || painRelieversLoading
 
   // Map VisionCard
   const visionStatement = visionCard?.title ?? ''
@@ -130,6 +102,29 @@ function FormulateStrategyContent() {
             ? { title: j.title ?? '', institutionalTemplate: j.subtitle ?? undefined, cognitiveAutomation: j.description ?? undefined } as CanvasJTBD
             : j.title ?? ''
           ),
+      }))
+    : []
+
+  // Map Pains from API → CanvasPain[]
+  const pains: CanvasPain[] = painItems
+    ? painItems.map(p => ({
+        id: p.id,
+        title: p.title ?? '',
+        description: p.description ?? '',
+        personaIds: parsePersonaIds(p.subtitle),
+      }))
+    : []
+
+  // Map Pain Subtitle
+  const painSubtitle = painSection?.title ?? undefined
+
+  // Map Pain Relievers (solutions) from API → CanvasSolution[]
+  const solutions: CanvasSolution[] = painRelieverItems
+    ? painRelieverItems.map(s => ({
+        id: s.id,
+        title: s.title ?? '',
+        description: s.description ?? '',
+        painIds: parsePainIds(s.subtitle),
       }))
     : []
 
@@ -175,6 +170,41 @@ function FormulateStrategyContent() {
     })
   }
 
+  function handleSavePains(updatedPains: CanvasPain[], updatedSubtitle?: string) {
+    // Save / update pain section subtitle
+    if (updatedSubtitle !== undefined) {
+      if (painSection) {
+        updatePainSection.mutate({ id: painSection.id, data: { title: updatedSubtitle } })
+      } else {
+        addPainSection.mutate({ type: 'pain_section', title: updatedSubtitle, subtitle: null, description: null, order_value: 1, parent_id: null })
+      }
+    }
+    // Save each pain
+    updatedPains.forEach((pain, i) => {
+      const personaIdStr = pain.personaIds?.length ? pain.personaIds.join(',') : null
+      const painData = { title: pain.title, description: pain.description, subtitle: personaIdStr, order_value: i + 1 }
+      const existing = painItems?.find(p => p.id === pain.id)
+      if (existing) {
+        updatePain.mutate({ id: pain.id, data: painData })
+      } else {
+        addPain.mutate({ type: 'pain', ...painData, parent_id: null })
+      }
+    })
+  }
+
+  function handleSaveSolutions(updatedSolutions: CanvasSolution[]) {
+    updatedSolutions.forEach((sol, i) => {
+      const painIdStr = sol.painIds.length ? sol.painIds.join(',') : null
+      const solData = { title: sol.title, description: sol.description, subtitle: painIdStr, order_value: i + 1 }
+      const existing = painRelieverItems?.find(s => s.id === sol.id)
+      if (existing) {
+        updatePainReliever.mutate({ id: sol.id, data: solData })
+      } else {
+        addPainReliever.mutate({ type: 'pain_reliever', ...solData, parent_id: null })
+      }
+    })
+  }
+
   return (
     <>
       <PageHeader
@@ -205,15 +235,18 @@ function FormulateStrategyContent() {
             visionDetail={visionDetail}
             visionCallout={visionCallout}
             personas={personas}
-            pains={PAINS}
-            painSubtitle="Strategy formulation is trapped in an artisanal model — depending on consultants' skills, ad-hoc spreadsheets, and PowerPoint decks assembled under time pressure."
-            solutions={SOLUTIONS}
+            pains={pains}
+            painSubtitle={painSubtitle}
+            solutions={solutions}
             successItems={SUCCESS_ITEMS}
             detailedView={detailedView}
             onSaveVision={handleSaveVision}
             visionLoading={visionLoading}
             onSavePersonas={handleSavePersonas}
             personasLoading={personasLoading}
+            onSavePains={handleSavePains}
+            onSaveSolutions={handleSaveSolutions}
+            painsLoading={painsAllLoading}
           />
         </CommentableRegion>
         <CommentsPanel />
