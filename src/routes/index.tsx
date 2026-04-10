@@ -189,7 +189,7 @@ function SortableRow({
 function TypeBadge({ type }: { type: 'idea' | 'challenge' | 'feedback' | 'question' }) {
   const styles = { idea: 'bg-primary-faded text-primary', challenge: 'bg-destructive-faded text-destructive', feedback: 'bg-warning-faded text-warning', question: 'bg-muted text-muted-foreground' }
   const labels = { idea: 'Idea', challenge: 'Challenge', feedback: 'Feedback', question: 'Question' }
-  return <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold', styles[type])}>{labels[type]}</span>
+  return <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-semibold', styles[type])}>{labels[type]}</span>
 }
 
 function InitialsAvatar({ initials }: { initials: string }) {
@@ -595,12 +595,12 @@ function OverviewContent() {
                                   <Close className="w-3 h-3 text-white" />
                                 </button>
                               </div>
-                              <input value={block.label} onChange={e => updateBlock(block.id, 'label', e.target.value)} className="block bg-transparent border-b border-white/20 focus:border-white/50 text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-1 w-full focus:outline-none placeholder:text-white/30" placeholder="LABEL" />
+                              <input value={block.label} onChange={e => updateBlock(block.id, 'label', e.target.value)} className="block bg-transparent border-b border-white/20 focus:border-white/50 text-[15px] font-semibold text-white/50 uppercase tracking-wider mb-1 w-full focus:outline-none placeholder:text-white/30" placeholder="LABEL" />
                               <input value={block.title} onChange={e => updateBlock(block.id, 'title', e.target.value)} className="block bg-transparent border-b border-white/20 focus:border-white/50 text-sm font-bold text-white w-full focus:outline-none placeholder:text-white/40 mt-0.5" placeholder="Title" />
                               <input value={block.subtitle} onChange={e => updateBlock(block.id, 'subtitle', e.target.value)} className="block bg-transparent border-b border-white/20 focus:border-white/50 text-xs text-white/60 mt-1 w-full focus:outline-none placeholder:text-white/30" placeholder="Description" />
                               <button
                                 onClick={() => setOpenEditBlockId(block.id)}
-                                className="flex items-center gap-1 text-[10px] text-white/40 hover:text-white/70 border border-dashed border-white/20 hover:border-white/40 rounded px-1.5 py-0.5 mt-2 w-full justify-center transition-colors"
+                                className="flex items-center gap-1 text-[15px] text-white/40 hover:text-white/70 border border-dashed border-white/20 hover:border-white/40 rounded px-1.5 py-0.5 mt-2 w-full justify-center transition-colors"
                               >
                                 <AttachFile className="w-2.5 h-2.5" />
                                 {getBlockDetail(block.id).notes || getBlockDetail(block.id).files.length > 0 ? 'Edit details' : 'Add details'}
@@ -608,7 +608,7 @@ function OverviewContent() {
                             </>
                           ) : (
                             <>
-                              <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-0.5">{block.label}</p>
+                              <p className="text-[15px] font-semibold text-white/50 uppercase tracking-wider mb-0.5">{block.label}</p>
                               <p className="text-sm font-bold">{block.title}</p>
                               <p className="text-xs text-white/60 mt-0.5">{block.subtitle}</p>
                             </>
@@ -763,7 +763,7 @@ function OverviewContent() {
                                     <button
                                       key={type}
                                       onClick={() => navigate({ to: squad.path as '/formulate', state: { panelOpen: true, typeFilter: type } })}
-                                      className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold transition-opacity hover:opacity-75', TYPE_BADGE_STYLES[type])}
+                                      className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[15px] font-semibold transition-opacity hover:opacity-75', TYPE_BADGE_STYLES[type])}
                                     >
                                       {count} {type}
                                     </button>
@@ -821,7 +821,7 @@ function OverviewContent() {
                       </div>
                       <p className="text-xs text-foreground leading-relaxed line-clamp-2">{item.content}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <button className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"><ThumbUp className="w-3 h-3" />{item.votes}</button>
+                        <button className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-primary transition-colors"><ThumbUp className="w-3 h-3" />{item.votes}</button>
                       </div>
                     </div>
                   </div>

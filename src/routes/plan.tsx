@@ -81,6 +81,7 @@ function StrategicPlanContent() {
   return (
     <>
       <PageHeader
+        sticky
         back={{ to: '..' }}
         title="Strategic Plan"
         subtitle="Translating strategy into plans people can own and commit to — with coherent cascade, hypothesis-driven charters, and living financial links."

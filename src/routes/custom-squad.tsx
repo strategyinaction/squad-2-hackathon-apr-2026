@@ -32,6 +32,7 @@ function CustomSquadContent() {
   return (
     <>
       <PageHeader
+        sticky
         back={{ to: '..' }}
         title="New Platform Area"
         subtitle="Use the canvas below to define this platform area's vision, target group, needs, product, and goals."

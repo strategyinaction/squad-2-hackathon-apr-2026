@@ -158,11 +158,11 @@ function RichTextEditor({ value, onChange, placeholder }: { value: string; onCha
   return (
     <div className="border border-border rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-primary/30">
       <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border bg-shell">
-        <button type="button" onMouseDown={e => { e.preventDefault(); exec('bold'); }} className="w-6 h-6 flex items-center justify-center rounded text-[11px] font-bold text-muted-foreground hover:bg-border hover:text-foreground transition-colors">B</button>
-        <button type="button" onMouseDown={e => { e.preventDefault(); exec('italic'); }} className="w-6 h-6 flex items-center justify-center rounded text-[11px] italic text-muted-foreground hover:bg-border hover:text-foreground transition-colors">I</button>
+        <button type="button" onMouseDown={e => { e.preventDefault(); exec('bold'); }} className="w-6 h-6 flex items-center justify-center rounded text-[16px] font-bold text-muted-foreground hover:bg-border hover:text-foreground transition-colors">B</button>
+        <button type="button" onMouseDown={e => { e.preventDefault(); exec('italic'); }} className="w-6 h-6 flex items-center justify-center rounded text-[16px] italic text-muted-foreground hover:bg-border hover:text-foreground transition-colors">I</button>
         <div className="w-px h-3.5 bg-border mx-0.5" />
-        <button type="button" onMouseDown={e => { e.preventDefault(); exec('insertUnorderedList'); }} className="w-6 h-6 flex items-center justify-center rounded text-[11px] text-muted-foreground hover:bg-border hover:text-foreground transition-colors">•≡</button>
-        <button type="button" onMouseDown={e => { e.preventDefault(); exec('insertOrderedList'); }} className="w-6 h-6 flex items-center justify-center rounded text-[10px] text-muted-foreground hover:bg-border hover:text-foreground transition-colors">1≡</button>
+        <button type="button" onMouseDown={e => { e.preventDefault(); exec('insertUnorderedList'); }} className="w-6 h-6 flex items-center justify-center rounded text-[16px] text-muted-foreground hover:bg-border hover:text-foreground transition-colors">•≡</button>
+        <button type="button" onMouseDown={e => { e.preventDefault(); exec('insertOrderedList'); }} className="w-6 h-6 flex items-center justify-center rounded text-[15px] text-muted-foreground hover:bg-border hover:text-foreground transition-colors">1≡</button>
       </div>
       <div
         ref={ref}
@@ -226,7 +226,7 @@ export function ItemDetailModal({
       <div className="bg-white rounded-xl shadow-large border border-border w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="px-5 pt-5 pb-4 border-b border-border flex items-start gap-3 shrink-0">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Add Details</p>
+            <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Add Details</p>
             <h3 className="text-sm font-bold text-heading leading-snug">{title}</h3>
           </div>
           <button
@@ -264,7 +264,7 @@ export function ItemDetailModal({
                       <div className="flex items-center gap-2 bg-shell rounded-lg px-3 py-2 border border-border">
                         <AttachFile className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                         <span className="text-xs text-foreground flex-1 truncate">{f.name}</span>
-                        <span className="text-[10px] text-muted-foreground shrink-0">{f.size}</span>
+                        <span className="text-[15px] text-muted-foreground shrink-0">{f.size}</span>
                         <button
                           onClick={() => onChange({ ...detail, files: detail.files.filter(x => x.id !== f.id) })}
                           className="text-muted-foreground hover:text-destructive transition-colors ml-1 shrink-0"
@@ -318,7 +318,7 @@ export function ItemDetailPanel({
       <div className={cn('fixed right-0 top-0 h-full w-96 bg-white shadow-large z-[1501] flex flex-col border-l border-border transition-transform duration-300 ease-out', mounted ? 'translate-x-0' : 'translate-x-full')}>
         <div className="px-5 py-4 border-b border-border flex items-start gap-3 shrink-0">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Details</p>
+            <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Details</p>
             <h3 className="text-sm font-bold text-heading leading-snug">{title}</h3>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -345,13 +345,13 @@ export function ItemDetailPanel({
           {!hasContent ? (
             <div className="text-center py-8">
               <p className="text-xs text-muted-foreground mb-1">No details added yet.</p>
-              <p className="text-[10px] text-muted-foreground/70">Enter edit mode to add notes and attachments.</p>
+              <p className="text-[15px] text-muted-foreground/70">Enter edit mode to add notes and attachments.</p>
             </div>
           ) : (
             <>
               {detail.notes && (
                 <div className="mb-5">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Notes</p>
+                  <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Notes</p>
                   <div
                     className="text-xs text-foreground leading-relaxed [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-0.5 [&_strong]:font-semibold [&_em]:italic"
                     dangerouslySetInnerHTML={{ __html: detail.notes }}
@@ -360,7 +360,7 @@ export function ItemDetailPanel({
               )}
               {detail.files.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Attachments</p>
+                  <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Attachments</p>
                   <div className="flex flex-col gap-2">
                     {detail.files.map(f => {
                       const isImg = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f.name);
@@ -374,7 +374,7 @@ export function ItemDetailPanel({
                           <div className="flex items-center gap-2 bg-shell rounded-lg px-3 py-2 border border-border">
                             <AttachFile className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                             <span className="text-xs text-foreground flex-1 truncate">{f.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0">{f.size}</span>
+                            <span className="text-[15px] text-muted-foreground shrink-0">{f.size}</span>
                           </div>
                         </div>
                       );
@@ -588,7 +588,7 @@ export function VisionCanvas({
 
         {visionEditing ? (
           <div className="px-6 py-5">
-            <p className={cn('text-[10px] font-bold uppercase tracking-widest mb-2', a.text)}>Vision</p>
+            <p className={cn('text-[15px] font-bold uppercase tracking-widest mb-2', a.text)}>Vision</p>
             <input
               value={data.visionStatement}
               onChange={e => upd('visionStatement', e.target.value)}
@@ -618,7 +618,7 @@ export function VisionCanvas({
           </div>
         ) : (
           <CommentableRegion id={rid('vision')} label="Vision" className="px-6 py-5">
-            <p className={cn('text-[10px] font-bold uppercase tracking-widest mb-2', a.text)}>Vision</p>
+            <p className={cn('text-[15px] font-bold uppercase tracking-widest mb-2', a.text)}>Vision</p>
             <HighlightedText as="h3" sectionId={rid('vision')} text={data.visionStatement} className="text-base font-bold text-heading leading-snug mb-2 pr-36" />
             <HighlightedText as="p" sectionId={rid('vision')} text={data.visionDetail} className="text-sm text-muted-foreground leading-relaxed max-w-4xl" />
             {data.visionCallout && (
@@ -661,29 +661,29 @@ export function VisionCanvas({
                             <input
                               value={p.label}
                               onChange={e => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, label: e.target.value } : x))}
-                              className="flex-1 border-b border-border text-[11px] font-bold text-heading bg-transparent focus:outline-none"
+                              className="flex-1 border-b border-border text-[16px] font-bold text-heading bg-transparent focus:outline-none"
                               placeholder="Persona name"
                             />
                             <button onClick={() => upd('personas', data.personas.filter((_, i) => i !== pi))} className="w-5 h-5 rounded-full bg-white hover:bg-shell flex items-center justify-center border border-border shrink-0">
                               <Close className="w-2.5 h-2.5 text-muted-foreground" />
                             </button>
                           </div>
-                          <textarea value={p.quote} onChange={e => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, quote: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1.5 text-[10px] italic text-foreground leading-relaxed mb-2 bg-white focus:outline-none resize-none" placeholder="Representative quote..." />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Jobs to be done</p>
+                          <textarea value={p.quote} onChange={e => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, quote: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1.5 text-[15px] italic text-foreground leading-relaxed mb-2 bg-white focus:outline-none resize-none" placeholder="Representative quote..." />
+                          <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Jobs to be done</p>
                           {p.jtbds.map((jtbd, ji) => (
                             <div key={ji} className="flex items-center gap-1 mb-1">
-                              <input value={jtbd} onChange={e => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, jtbds: x.jtbds.map((j, k) => k === ji ? e.target.value : j) } : x))} className="flex-1 border-b border-border text-[10px] text-foreground bg-transparent focus:outline-none py-0.5" placeholder="Job to be done..." />
+                              <input value={jtbd} onChange={e => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, jtbds: x.jtbds.map((j, k) => k === ji ? e.target.value : j) } : x))} className="flex-1 border-b border-border text-[15px] text-foreground bg-transparent focus:outline-none py-0.5" placeholder="Job to be done..." />
                               <button onClick={() => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, jtbds: x.jtbds.filter((_, k) => k !== ji) } : x))} className="w-4 h-4 rounded-full bg-shell hover:bg-border flex items-center justify-center shrink-0">
                                 <Close className="w-2.5 h-2.5 text-muted-foreground" />
                               </button>
                             </div>
                           ))}
-                          <button onClick={() => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, jtbds: [...x.jtbds, ''] } : x))} className={cn('flex items-center gap-1 text-[10px] hover:opacity-80 mt-2 transition-colors', a.text)}>
+                          <button onClick={() => upd('personas', data.personas.map((x, i) => i === pi ? { ...x, jtbds: [...x.jtbds, ''] } : x))} className={cn('flex items-center gap-1 text-[15px] hover:opacity-80 mt-2 transition-colors', a.text)}>
                             <Add className="w-3 h-3" />Add JTBD
                           </button>
                           <button
                             onClick={() => setOpenEditDetailId(`persona-${p.id}`)}
-                            className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-2 w-full transition-colors"
+                            className="flex items-center justify-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-2 w-full transition-colors"
                           >
                             <AttachFile className="w-3 h-3" />
                             {getDetail(`persona-${p.id}`).notes || getDetail(`persona-${p.id}`).files.length > 0 ? 'Edit details' : 'Add details / attachment'}
@@ -702,7 +702,7 @@ export function VisionCanvas({
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap gap-1.5 mb-1">
                 {data.personas.map(p => (
-                  <button key={p.id} onClick={() => setActivePersona(p.id)} className={cn('px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all', activePersona === p.id ? a.pillActive : 'bg-white text-muted-foreground border-border hover:border-primary/30')}>
+                  <button key={p.id} onClick={() => setActivePersona(p.id)} className={cn('px-2.5 py-1 rounded-full text-[15px] font-semibold border transition-all', activePersona === p.id ? a.pillActive : 'bg-white text-muted-foreground border-border hover:border-primary/30')}>
                     {p.label}
                   </button>
                 ))}
@@ -714,15 +714,15 @@ export function VisionCanvas({
                   onClick={(e) => { if (isClick(e)) setOpenViewDetailId(`persona-${activePers.id}`); }}
                 >
                   <div className="flex items-start gap-1.5">
-                    <HighlightedText as="p" sectionId={rid('target-group')} text={activePers.quote} className={cn('flex-1 text-[11px] italic text-foreground leading-relaxed border-l-2 pl-3', a.quoteBorder)} />
+                    <HighlightedText as="p" sectionId={rid('target-group')} text={activePers.quote} className={cn('flex-1 text-[16px] italic text-foreground leading-relaxed border-l-2 pl-3', a.quoteBorder)} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Jobs to be done</p>
+                    <p className="text-[15px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Jobs to be done</p>
                     <div className="flex flex-col gap-2">
                       {activePers.jtbds.map((jtbd, i) => (
                         <div key={i} className="flex items-start gap-1.5">
                           <ChevronRight className={cn('w-3 h-3 mt-0.5 shrink-0', a.text)} />
-                          <HighlightedText as="p" sectionId={rid('target-group')} text={jtbd} className="text-[11px] text-foreground leading-snug" />
+                          <HighlightedText as="p" sectionId={rid('target-group')} text={jtbd} className="text-[16px] text-foreground leading-snug" />
                         </div>
                       ))}
                     </div>
@@ -748,9 +748,9 @@ export function VisionCanvas({
           {needsEditing ? (
             <>
               {data.painSubtitle !== undefined ? (
-                <textarea value={data.painSubtitle} onChange={e => upd('painSubtitle', e.target.value)} rows={2} className="block w-full border border-border rounded-lg p-1.5 text-[11px] text-muted-foreground leading-relaxed mb-3 bg-white focus:outline-none resize-none" placeholder="Subtitle..." />
+                <textarea value={data.painSubtitle} onChange={e => upd('painSubtitle', e.target.value)} rows={2} className="block w-full border border-border rounded-lg p-1.5 text-[16px] text-muted-foreground leading-relaxed mb-3 bg-white focus:outline-none resize-none" placeholder="Subtitle..." />
               ) : (
-                <button onClick={() => upd('painSubtitle', '')} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mb-3 transition-colors">
+                <button onClick={() => upd('painSubtitle', '')} className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mb-3 transition-colors">
                   <Add className="w-3 h-3" />Add subtitle
                 </button>
               )}
@@ -764,13 +764,13 @@ export function VisionCanvas({
                             <div {...handleProps} className="cursor-grab text-border hover:text-muted-foreground shrink-0 mt-1.5 transition-colors">
                               <DragIndicator className="w-3.5 h-3.5" />
                             </div>
-                            <span className="w-5 h-5 rounded-full bg-destructive-faded text-destructive text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                            <span className="w-5 h-5 rounded-full bg-destructive-faded text-destructive text-[15px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                             <div className="flex-1 min-w-0">
-                              <input value={pain.title} onChange={e => upd('pains', data.pains.map((x, k) => k === i ? { ...x, title: e.target.value } : x))} className="block w-full border-b border-border text-[11px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Pain title..." />
-                              <textarea value={pain.description} onChange={e => upd('pains', data.pains.map((x, k) => k === i ? { ...x, description: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[10px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Description..." />
+                              <input value={pain.title} onChange={e => upd('pains', data.pains.map((x, k) => k === i ? { ...x, title: e.target.value } : x))} className="block w-full border-b border-border text-[16px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Pain title..." />
+                              <textarea value={pain.description} onChange={e => upd('pains', data.pains.map((x, k) => k === i ? { ...x, description: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[15px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Description..." />
                               <button
                                 onClick={() => setOpenEditDetailId(`pain-${pain.id}`)}
-                                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
+                                className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
                               >
                                 <AttachFile className="w-2.5 h-2.5" />
                                 {getDetail(`pain-${pain.id}`).notes || getDetail(`pain-${pain.id}`).files.length > 0 ? 'Edit details' : 'Add details'}
@@ -794,18 +794,18 @@ export function VisionCanvas({
                   <button onClick={() => upd('painCallout', undefined)} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-white hover:bg-border flex items-center justify-center border border-border">
                     <Close className="w-2.5 h-2.5 text-muted-foreground" />
                   </button>
-                  <input value={data.painCallout.label} onChange={e => upd('painCallout', { ...data.painCallout!, label: e.target.value })} className={cn('block w-full bg-transparent border-b border-border focus:outline-none text-[10px] font-bold mb-1 pr-5', data.painCallout.isDestructive ? 'text-destructive' : a.calloutText)} />
-                  <textarea value={data.painCallout.body} onChange={e => upd('painCallout', { ...data.painCallout!, body: e.target.value })} rows={2} className="block w-full border border-border rounded p-1 text-[10px] text-foreground leading-relaxed bg-transparent focus:outline-none resize-none" />
+                  <input value={data.painCallout.label} onChange={e => upd('painCallout', { ...data.painCallout!, label: e.target.value })} className={cn('block w-full bg-transparent border-b border-border focus:outline-none text-[15px] font-bold mb-1 pr-5', data.painCallout.isDestructive ? 'text-destructive' : a.calloutText)} />
+                  <textarea value={data.painCallout.body} onChange={e => upd('painCallout', { ...data.painCallout!, body: e.target.value })} rows={2} className="block w-full border border-border rounded p-1 text-[15px] text-foreground leading-relaxed bg-transparent focus:outline-none resize-none" />
                 </div>
               ) : (
-                <button onClick={() => upd('painCallout', { label: 'Note', body: '' })} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-3 transition-colors">
+                <button onClick={() => upd('painCallout', { label: 'Note', body: '' })} className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-3 transition-colors">
                   <Add className="w-3 h-3" />Add callout
                 </button>
               )}
             </>
           ) : (
             <>
-              {data.painSubtitle && <HighlightedText as="p" sectionId={rid('needs')} text={data.painSubtitle} className="text-[11px] text-muted-foreground leading-relaxed mb-3" />}
+              {data.painSubtitle && <HighlightedText as="p" sectionId={rid('needs')} text={data.painSubtitle} className="text-[16px] text-muted-foreground leading-relaxed mb-3" />}
               <div className="flex flex-col gap-3">
                 {data.pains.map((pain, i) => (
                   <div
@@ -814,18 +814,18 @@ export function VisionCanvas({
                     onPointerDown={onItemPD}
                     onClick={(e) => { if (isClick(e)) setOpenViewDetailId(`pain-${pain.id}`); }}
                   >
-                    <span className="w-5 h-5 rounded-full bg-destructive-faded text-destructive text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                    <span className="w-5 h-5 rounded-full bg-destructive-faded text-destructive text-[15px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                     <div className="flex-1">
-                      <HighlightedText as="p" sectionId={rid('needs')} text={pain.title} className="text-[11px] font-bold text-heading leading-tight" />
-                      <HighlightedText as="p" sectionId={rid('needs')} text={pain.description} className="text-[10px] text-muted-foreground leading-relaxed mt-0.5" />
+                      <HighlightedText as="p" sectionId={rid('needs')} text={pain.title} className="text-[16px] font-bold text-heading leading-tight" />
+                      <HighlightedText as="p" sectionId={rid('needs')} text={pain.description} className="text-[15px] text-muted-foreground leading-relaxed mt-0.5" />
                     </div>
                   </div>
                 ))}
               </div>
               {data.painCallout && (
                 <div className={cn('mt-3 rounded-lg border p-2.5', data.painCallout.isDestructive ? 'bg-destructive-faded border-destructive/20' : cn(a.faded, a.fadedBorder))}>
-                  <HighlightedText as="p" sectionId={rid('needs')} text={data.painCallout.label} className={cn('text-[10px] font-bold mb-0.5', data.painCallout.isDestructive ? 'text-destructive' : a.calloutText)} />
-                  <HighlightedText as="p" sectionId={rid('needs')} text={data.painCallout.body} className="text-[10px] text-foreground leading-relaxed" />
+                  <HighlightedText as="p" sectionId={rid('needs')} text={data.painCallout.label} className={cn('text-[15px] font-bold mb-0.5', data.painCallout.isDestructive ? 'text-destructive' : a.calloutText)} />
+                  <HighlightedText as="p" sectionId={rid('needs')} text={data.painCallout.body} className="text-[15px] text-foreground leading-relaxed" />
                 </div>
               )}
             </>
@@ -847,9 +847,9 @@ export function VisionCanvas({
           {productEditing ? (
             <>
               {data.productSubtitle !== undefined ? (
-                <textarea value={data.productSubtitle} onChange={e => upd('productSubtitle', e.target.value)} rows={2} className="block w-full border border-border rounded-lg p-1.5 text-[11px] text-muted-foreground leading-relaxed mb-3 bg-white focus:outline-none resize-none" placeholder="Subtitle..." />
+                <textarea value={data.productSubtitle} onChange={e => upd('productSubtitle', e.target.value)} rows={2} className="block w-full border border-border rounded-lg p-1.5 text-[16px] text-muted-foreground leading-relaxed mb-3 bg-white focus:outline-none resize-none" placeholder="Subtitle..." />
               ) : (
-                <button onClick={() => upd('productSubtitle', '')} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mb-3 transition-colors">
+                <button onClick={() => upd('productSubtitle', '')} className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mb-3 transition-colors">
                   <Add className="w-3 h-3" />Add subtitle
                 </button>
               )}
@@ -865,11 +865,11 @@ export function VisionCanvas({
                             </div>
                             <div className={cn('w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5', a.bullet)}><CheckCircle className="w-3 h-3" /></div>
                             <div className="flex-1 min-w-0">
-                              <input value={point.headline} onChange={e => upd('productPoints', data.productPoints.map((x, k) => k === i ? { ...x, headline: e.target.value } : x))} className="block w-full border-b border-border text-[11px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Headline..." />
-                              <textarea value={point.detail} onChange={e => upd('productPoints', data.productPoints.map((x, k) => k === i ? { ...x, detail: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[10px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Detail..." />
+                              <input value={point.headline} onChange={e => upd('productPoints', data.productPoints.map((x, k) => k === i ? { ...x, headline: e.target.value } : x))} className="block w-full border-b border-border text-[16px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Headline..." />
+                              <textarea value={point.detail} onChange={e => upd('productPoints', data.productPoints.map((x, k) => k === i ? { ...x, detail: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[15px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Detail..." />
                               <button
                                 onClick={() => setOpenEditDetailId(`pp-${i}`)}
-                                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
+                                className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
                               >
                                 <AttachFile className="w-2.5 h-2.5" />
                                 {getDetail(`pp-${i}`).notes || getDetail(`pp-${i}`).files.length > 0 ? 'Edit details' : 'Add details'}
@@ -893,18 +893,18 @@ export function VisionCanvas({
                   <button onClick={() => upd('productCallout', undefined)} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-white hover:bg-shell flex items-center justify-center border border-border">
                     <Close className="w-2.5 h-2.5 text-muted-foreground" />
                   </button>
-                  <input value={data.productCallout.label} onChange={e => upd('productCallout', { ...data.productCallout!, label: e.target.value })} className={cn('block w-full bg-transparent border-b border-border focus:outline-none text-[10px] font-bold mb-1 pr-5', a.calloutText)} />
-                  <textarea value={data.productCallout.body} onChange={e => upd('productCallout', { ...data.productCallout!, body: e.target.value })} rows={2} className="block w-full bg-transparent border border-border rounded p-1 text-[10px] text-foreground leading-relaxed focus:outline-none resize-none" />
+                  <input value={data.productCallout.label} onChange={e => upd('productCallout', { ...data.productCallout!, label: e.target.value })} className={cn('block w-full bg-transparent border-b border-border focus:outline-none text-[15px] font-bold mb-1 pr-5', a.calloutText)} />
+                  <textarea value={data.productCallout.body} onChange={e => upd('productCallout', { ...data.productCallout!, body: e.target.value })} rows={2} className="block w-full bg-transparent border border-border rounded p-1 text-[15px] text-foreground leading-relaxed focus:outline-none resize-none" />
                 </div>
               ) : (
-                <button onClick={() => upd('productCallout', { label: 'Label', body: '' })} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-3 transition-colors">
+                <button onClick={() => upd('productCallout', { label: 'Label', body: '' })} className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-2 py-1 mt-3 transition-colors">
                   <Add className="w-3 h-3" />Add callout
                 </button>
               )}
             </>
           ) : (
             <>
-              {data.productSubtitle && <HighlightedText as="p" sectionId={rid('product')} text={data.productSubtitle} className="text-[11px] text-muted-foreground leading-relaxed mb-3" />}
+              {data.productSubtitle && <HighlightedText as="p" sectionId={rid('product')} text={data.productSubtitle} className="text-[16px] text-muted-foreground leading-relaxed mb-3" />}
               <div className="flex flex-col gap-3">
                 {data.productPoints.map((point, i) => (
                   <div
@@ -915,16 +915,16 @@ export function VisionCanvas({
                   >
                     <div className={cn('w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5', a.bullet)}><CheckCircle className="w-3 h-3" /></div>
                     <div className="flex-1">
-                      <HighlightedText as="p" sectionId={rid('product')} text={point.headline} className="text-[11px] font-bold text-heading leading-tight" />
-                      <HighlightedText as="p" sectionId={rid('product')} text={point.detail} className="text-[10px] text-muted-foreground leading-relaxed mt-0.5" />
+                      <HighlightedText as="p" sectionId={rid('product')} text={point.headline} className="text-[16px] font-bold text-heading leading-tight" />
+                      <HighlightedText as="p" sectionId={rid('product')} text={point.detail} className="text-[15px] text-muted-foreground leading-relaxed mt-0.5" />
                     </div>
                   </div>
                 ))}
               </div>
               {data.productCallout && (
                 <div className={cn('mt-3 rounded-lg border p-2.5', a.faded, a.fadedBorder)}>
-                  <HighlightedText as="p" sectionId={rid('product')} text={data.productCallout.label} className={cn('text-[10px] font-bold mb-0.5', a.calloutText)} />
-                  <HighlightedText as="p" sectionId={rid('product')} text={data.productCallout.body} className="text-[10px] text-foreground leading-relaxed" />
+                  <HighlightedText as="p" sectionId={rid('product')} text={data.productCallout.label} className={cn('text-[15px] font-bold mb-0.5', a.calloutText)} />
+                  <HighlightedText as="p" sectionId={rid('product')} text={data.productCallout.body} className="text-[15px] text-foreground leading-relaxed" />
                 </div>
               )}
             </>
@@ -955,13 +955,13 @@ export function VisionCanvas({
                             <div {...handleProps} className="cursor-grab text-border hover:text-muted-foreground shrink-0 mt-1 transition-colors">
                               <DragIndicator className="w-3.5 h-3.5" />
                             </div>
-                            <span className={cn('w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5', a.bullet)}>{i + 1}</span>
+                            <span className={cn('w-5 h-5 rounded-full text-[15px] font-bold flex items-center justify-center shrink-0 mt-0.5', a.bullet)}>{i + 1}</span>
                             <div className="flex-1 min-w-0">
-                              <input value={item.title} onChange={e => upd('successItems', data.successItems.map((x, k) => k === i ? { ...x, title: e.target.value } : x))} className="block w-full border-b border-border text-[11px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Goal title..." />
-                              <textarea value={item.detail} onChange={e => upd('successItems', data.successItems.map((x, k) => k === i ? { ...x, detail: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[10px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Detail..." />
+                              <input value={item.title} onChange={e => upd('successItems', data.successItems.map((x, k) => k === i ? { ...x, title: e.target.value } : x))} className="block w-full border-b border-border text-[16px] font-bold text-heading leading-tight bg-transparent focus:outline-none mb-0.5" placeholder="Goal title..." />
+                              <textarea value={item.detail} onChange={e => upd('successItems', data.successItems.map((x, k) => k === i ? { ...x, detail: e.target.value } : x))} rows={2} className="block w-full border border-border rounded p-1 text-[15px] text-muted-foreground leading-relaxed bg-white focus:outline-none resize-none mt-1" placeholder="Detail..." />
                               <button
                                 onClick={() => setOpenEditDetailId(`success-${item.id}`)}
-                                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
+                                className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded px-1.5 py-0.5 mt-1.5 transition-colors"
                               >
                                 <AttachFile className="w-2.5 h-2.5" />
                                 {getDetail(`success-${item.id}`).notes || getDetail(`success-${item.id}`).files.length > 0 ? 'Edit details' : 'Add details'}
@@ -990,10 +990,10 @@ export function VisionCanvas({
                   onPointerDown={onItemPD}
                   onClick={(e) => { if (isClick(e)) setOpenViewDetailId(`success-${item.id}`); }}
                 >
-                  <span className={cn('w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5', a.bullet)}>{i + 1}</span>
+                  <span className={cn('w-5 h-5 rounded-full text-[15px] font-bold flex items-center justify-center shrink-0 mt-0.5', a.bullet)}>{i + 1}</span>
                   <div className="flex-1">
-                    <HighlightedText as="p" sectionId={rid('goals')} text={item.title} className="text-[11px] font-bold text-heading leading-tight" />
-                    <HighlightedText as="p" sectionId={rid('goals')} text={item.detail} className="text-[10px] text-muted-foreground leading-relaxed mt-0.5" />
+                    <HighlightedText as="p" sectionId={rid('goals')} text={item.title} className="text-[16px] font-bold text-heading leading-tight" />
+                    <HighlightedText as="p" sectionId={rid('goals')} text={item.detail} className="text-[15px] text-muted-foreground leading-relaxed mt-0.5" />
                   </div>
                 </div>
               ))}
@@ -1069,7 +1069,7 @@ function CanvasCell({
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             <p className={cn('text-xs font-bold uppercase tracking-widest', accent.text)}>{label}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 italic">{question}</p>
+            <p className="text-[15px] text-muted-foreground mt-0.5 italic">{question}</p>
           </div>
           {onEdit && (
             <div className="flex items-center gap-0.5 shrink-0 mt-0.5" onMouseUp={e => e.stopPropagation()}>
@@ -1078,14 +1078,14 @@ function CanvasCell({
                   {onCancel && (
                     <button
                       onClick={onCancel}
-                      className="px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-white/80 transition-colors"
+                      className="px-2 py-1 rounded text-[15px] text-muted-foreground hover:text-foreground hover:bg-white/80 transition-colors"
                     >
                       Cancel
                     </button>
                   )}
                   <button
                     onClick={onDone}
-                    className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-semibold bg-white border border-border text-heading shadow-xsmall hover:bg-shell transition-colors"
+                    className="flex items-center gap-0.5 px-2 py-1 rounded text-[15px] font-semibold bg-white border border-border text-heading shadow-xsmall hover:bg-shell transition-colors"
                   >
                     <Check className="w-3 h-3" />Done
                   </button>
@@ -1093,7 +1093,7 @@ function CanvasCell({
               ) : (
                 <button
                   onClick={onEdit}
-                  className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-white/80 transition-colors"
+                  className="flex items-center gap-0.5 px-2 py-1 rounded text-[15px] text-muted-foreground hover:text-foreground hover:bg-white/80 transition-colors"
                 >
                   <Edit className="w-3 h-3" />Edit
                 </button>

@@ -84,6 +84,7 @@ function LearnAdaptContent() {
   return (
     <>
       <PageHeader
+        sticky
         back={{ to: '..' }}
         title="Learn & Adapt"
         subtitle="Extracting meaning from execution and turning insights into timely, cascaded decisions."

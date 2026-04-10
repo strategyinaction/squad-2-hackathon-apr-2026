@@ -63,6 +63,8 @@ interface CommentsCtx {
   resolveComment: (id: string) => void;
   activeHighlight: string | null;
   setActiveHighlight: (t: string | null) => void;
+  activeRegionId: string | null;
+  setActiveRegionId: (id: string | null) => void;
   panelOpen: boolean;
   setPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
   typeFilter: CommentType | 'all';
@@ -84,6 +86,7 @@ export function CommentProvider({
 }) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+  const [activeRegionId, setActiveRegionId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(initialPanelOpen);
   const [typeFilter, setTypeFilter] = useState<CommentType | 'all'>(initialTypeFilter);
 
@@ -105,10 +108,14 @@ export function CommentProvider({
   }, []);
 
   return (
-    <CommentsContext.Provider value={{ comments, addComment, editComment, likeComment, resolveComment, activeHighlight, setActiveHighlight, panelOpen, setPanelOpen, typeFilter, setTypeFilter }}>
+    <CommentsContext.Provider value={{ comments, addComment, editComment, likeComment, resolveComment, activeHighlight, setActiveHighlight, activeRegionId, setActiveRegionId, panelOpen, setPanelOpen, typeFilter, setTypeFilter }}>
       {children}
     </CommentsContext.Provider>
   );
+}
+
+export function useCommentsCtx() {
+  return useContext(CommentsContext);
 }
 
 export function useComments(): CommentsCtx {
@@ -136,7 +143,7 @@ export function CommentsToggleButton() {
       <ModeComment className="w-3.5 h-3.5 text-primary" />
       Comments
       {openCount > 0 && (
-        <span className="w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center leading-none shrink-0">
+        <span className="w-4 h-4 rounded-full bg-primary text-white text-[14px] font-bold flex items-center justify-center leading-none shrink-0">
           {openCount}
         </span>
       )}
@@ -277,28 +284,28 @@ function CommentTooltip({
       onMouseLeave={onMouseLeave}
     >
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-5 h-5 rounded-full bg-primary-faded text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+        <div className="w-5 h-5 rounded-full bg-primary-faded text-primary text-[14px] font-bold flex items-center justify-center shrink-0">
           {comment.initials}
         </div>
-        <span className="text-[11px] font-semibold text-heading flex-1 min-w-0 truncate">{comment.author}</span>
-        <span className="text-[10px] text-muted-foreground shrink-0">{comment.createdAt}</span>
+        <span className="text-[16px] font-semibold text-heading flex-1 min-w-0 truncate">{comment.author}</span>
+        <span className="text-[15px] text-muted-foreground shrink-0">{comment.createdAt}</span>
       </div>
       <p className="text-xs text-foreground leading-relaxed line-clamp-3 mb-2">{comment.body}</p>
       {comment.attachments.length > 0 && (
-        <p className="text-[10px] text-muted-foreground mb-2">
+        <p className="text-[15px] text-muted-foreground mb-2">
           <AttachFile className="w-3 h-3 inline mr-0.5" />{comment.attachments.length} attachment{comment.attachments.length > 1 ? 's' : ''}
         </p>
       )}
       <div className="flex items-center gap-2 pt-1.5 border-t border-border">
         <button
           onClick={onLike}
-          className={cn('flex items-center gap-1 text-[10px] font-semibold transition-colors', comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-primary')}
+          className={cn('flex items-center gap-1 text-[15px] font-semibold transition-colors', comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-primary')}
         >
           <ThumbUp className="w-3 h-3" />{comment.likes > 0 ? comment.likes : ''}
         </button>
         <button
           onClick={onResolve}
-          className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-success transition-colors ml-auto"
+          className="flex items-center gap-1 text-[15px] font-semibold text-muted-foreground hover:text-success transition-colors ml-auto"
         >
           <CheckCircle className="w-3 h-3" />Resolve
         </button>
@@ -308,13 +315,18 @@ function CommentTooltip({
 }
 
 // ─── CommentableRegion ────────────────────────────────────────────────────────
-// Wrap any content area to enable text-selection commenting.
-
-interface Pending {
-  text: string;
-  rect: DOMRect;
-  selectionRects: DOMRect[];
-}
+// Wrap any content area to enable block-click commenting.
+//
+// When the Comments panel is open:
+//   - Hovering the block shows a subtle highlight ring + a cursor tooltip that
+//     follows the mouse: "Leave a comment"
+//   - Clicking anywhere on the block (except buttons/inputs) opens the comment
+//     popover. Uses onClickCapture so nested child onClick handlers are suppressed.
+//   - Nested CommentableRegions take priority: the outer region skips if the
+//     click target is inside a more-specific inner region.
+//
+// When a panel comment is clicked:
+//   - The region scrolls into view and flashes a blue highlight for 1.8 s.
 
 export function CommentableRegion({
   id,
@@ -327,75 +339,109 @@ export function CommentableRegion({
   children: React.ReactNode;
   className?: string;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const ctx = useContext(CommentsContext);
+  const regionRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
+  const [flashing, setFlashing] = useState(false);
+  const panelOpen = ctx?.panelOpen ?? false;
+  const activeRegionId = ctx?.activeRegionId ?? null;
+  const setActiveRegionId = ctx?.setActiveRegionId;
 
-  function handleMouseUp() {
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return;
-    const text = sel.toString().trim();
-    if (!text) return;
-    try {
-      const range = sel.getRangeAt(0);
-      if (!containerRef.current?.contains(range.commonAncestorContainer)) return;
-      const rect = range.getBoundingClientRect();
-      const selectionRects = Array.from(range.getClientRects());
-      sel.removeAllRanges();
-      setPending({ text, rect, selectionRects });
-    } catch { /* ignore */ }
+  // Scroll + flash when this region is navigated to from the panel
+  useEffect(() => {
+    if (activeRegionId !== id) return;
+    const el = regionRef.current;
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setFlashing(true);
+    const t = setTimeout(() => { setFlashing(false); setActiveRegionId?.(null); }, 1800);
+    return () => clearTimeout(t);
+  }, [activeRegionId, id, setActiveRegionId]);
+
+  function handleClickCapture(e: React.MouseEvent) {
+    if (!panelOpen) return;
+    const tag = (e.target as HTMLElement).tagName;
+    if (['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'LABEL'].includes(tag)) return;
+    // If a more-specific nested CommentableRegion contains the target, let it handle the click
+    const nearest = (e.target as HTMLElement).closest('[data-commentable-id]') as HTMLElement | null;
+    if (nearest && nearest !== regionRef.current) return;
+    e.stopPropagation();
+    setPendingPos({ x: e.clientX, y: e.clientY });
   }
 
+  const showHover = panelOpen && hovered && !pendingPos;
+  const isHighlighted = flashing || showHover;
+
   return (
-    <div ref={containerRef} onMouseUp={handleMouseUp} className={className}>
-      {children}
-      {pending && (
-        <>
-          {/* Selection highlight overlay — keeps text visually highlighted while popover is open */}
-          {createPortal(
-            pending.selectionRects.map((r, i) => (
-              <div
-                key={i}
-                style={{
-                  position: 'fixed',
-                  left: r.left,
-                  top: r.top,
-                  width: r.width,
-                  height: r.height,
-                  backgroundColor: '#fef9c3',
-                  mixBlendMode: 'multiply',
-                  pointerEvents: 'none',
-                  zIndex: 998,
-                }}
-              />
-            )),
-            document.body,
+    <div
+      ref={regionRef}
+      data-commentable-id={id}
+      className={cn(className, 'relative')}
+      onMouseEnter={e => { if (panelOpen) { e.stopPropagation(); setHovered(true); } }}
+      onMouseLeave={e => {
+        if (panelOpen) { e.stopPropagation(); setHovered(false); setMousePos(null); }
+      }}
+      onMouseMove={e => {
+        if (showHover) setMousePos({ x: e.clientX, y: e.clientY });
+      }}
+      onClickCapture={handleClickCapture}
+    >
+      {/* Highlight ring */}
+      {isHighlighted && (
+        <div
+          className={cn(
+            'absolute inset-0 rounded-xl pointer-events-none z-10',
+            flashing
+              ? 'ring-2 ring-primary/50 bg-primary/[0.04]'
+              : 'ring-1 ring-primary/25 bg-primary/[0.02]',
           )}
-          <SelectionPopover
-            text={pending.text}
-            rect={pending.rect}
-            sectionId={id}
-            sectionLabel={label}
-            onClose={() => setPending(null)}
-          />
-        </>
+        />
+      )}
+
+      {children}
+
+      {/* Cursor-following tooltip */}
+      {showHover && mousePos && createPortal(
+        <div
+          style={{ position: 'fixed', left: mousePos.x + 14, top: mousePos.y - 32, pointerEvents: 'none', zIndex: 2000 }}
+          className="flex items-center gap-1.5 bg-heading text-white text-[15px] font-semibold px-2.5 py-1 rounded-lg shadow-medium select-none whitespace-nowrap"
+        >
+          <ModeComment className="w-3 h-3" />
+          Leave a comment
+        </div>,
+        document.body,
+      )}
+
+      {/* Comment popover */}
+      {pendingPos && (
+        <BlockCommentPopover
+          sectionId={id}
+          sectionLabel={label}
+          x={pendingPos.x}
+          y={pendingPos.y}
+          onClose={() => { setPendingPos(null); setHovered(false); }}
+        />
       )}
     </div>
   );
 }
 
-// ─── SelectionPopover ─────────────────────────────────────────────────────────
+// ─── BlockCommentPopover ──────────────────────────────────────────────────────
+// Click-triggered comment popover. Anchored to the click position.
 
-function SelectionPopover({
-  text,
-  rect,
+function BlockCommentPopover({
   sectionId,
   sectionLabel,
+  x,
+  y,
   onClose,
 }: {
-  text: string;
-  rect: DOMRect;
   sectionId: string;
   sectionLabel: string;
+  x: number;
+  y: number;
   onClose: () => void;
 }) {
   const { addComment } = useComments();
@@ -405,8 +451,8 @@ function SelectionPopover({
   const ref = useRef<HTMLDivElement>(null);
 
   const W = 300;
-  const left = Math.max(8, Math.min(rect.left, window.innerWidth - W - 8));
-  const top = Math.min(rect.bottom + 8, window.innerHeight - 240);
+  const left = Math.max(8, Math.min(x - W / 2, window.innerWidth - W - 8));
+  const top = Math.min(y + 12, window.innerHeight - 260);
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
@@ -421,7 +467,7 @@ function SelectionPopover({
     addComment({
       sectionId,
       sectionLabel,
-      selectedText: text,
+      selectedText: '',
       body: body.trim(),
       type: commentType,
       author: 'You',
@@ -451,14 +497,20 @@ function SelectionPopover({
       style={{ position: 'fixed', left, top, width: W, zIndex: 1000 }}
       className="bg-white rounded-xl border border-border shadow-medium p-3"
     >
+      {/* Context label */}
+      <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-border">
+        <ModeComment className="w-3 h-3 text-primary shrink-0" />
+        <span className="text-[15px] font-semibold text-muted-foreground truncate">{sectionLabel}</span>
+      </div>
+
       {/* Type selector */}
-      <div className="flex items-center gap-1 flex-wrap mb-2 pb-2 border-b border-border">
+      <div className="flex items-center gap-1 flex-wrap mb-2">
         {COMMENT_TYPES.map(({ type, label, activeCls }) => (
           <button
             key={type}
             onClick={() => setCommentType(type)}
             className={cn(
-              'px-1.5 py-0.5 rounded-full text-[10px] font-semibold border capitalize transition-all',
+              'px-1.5 py-0.5 rounded-full text-[15px] font-semibold border capitalize transition-all',
               commentType === type ? activeCls : 'bg-white border-border text-muted-foreground hover:border-primary/30',
             )}
           >
@@ -485,7 +537,7 @@ function SelectionPopover({
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
           {attachments.map(a => (
-            <div key={a.id} className="flex items-center gap-1 bg-shell rounded px-1.5 py-0.5 border border-border text-[10px]">
+            <div key={a.id} className="flex items-center gap-1 bg-shell rounded px-1.5 py-0.5 border border-border text-[15px]">
               <AttachFile className="w-2.5 h-2.5 text-muted-foreground" />
               <span className="truncate max-w-[100px]">{a.name}</span>
               <button onClick={() => setAttachments(p => p.filter(x => x.id !== a.id))} className="text-muted-foreground hover:text-destructive ml-0.5">
@@ -498,24 +550,24 @@ function SelectionPopover({
 
       {/* Actions row */}
       <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border">
-        <label className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+        <label className="flex items-center gap-1 text-[16px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
           <AttachFile className="w-3.5 h-3.5" />Attach
           <input type="file" multiple className="hidden" onChange={onFileChange} />
         </label>
         <div className="flex items-center gap-1.5">
-          <button onClick={onClose} className="text-[11px] text-muted-foreground hover:text-foreground px-2 py-1 transition-colors">
+          <button onClick={onClose} className="text-[16px] text-muted-foreground hover:text-foreground px-2 py-1 transition-colors">
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={!body.trim()}
-            className="text-[11px] font-semibold bg-primary text-white hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground px-3 py-1 rounded-lg transition-colors"
+            className="text-[16px] font-semibold bg-primary text-white hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground px-3 py-1 rounded-lg transition-colors"
           >
             Comment
           </button>
         </div>
       </div>
-      <p className="text-[9px] text-muted-foreground/50 text-right mt-1">⌘↵ to submit · Esc to cancel</p>
+      <p className="text-[14px] text-muted-foreground/50 text-right mt-1">⌘↵ to submit · Esc to cancel</p>
     </div>,
     document.body,
   );
@@ -525,7 +577,7 @@ function SelectionPopover({
 // Renders nothing when closed — toggle is in the page header via CommentsToggleButton.
 
 export function CommentsPanel() {
-  const { comments, likeComment, resolveComment, editComment, activeHighlight, setActiveHighlight, panelOpen, setPanelOpen, typeFilter, setTypeFilter } = useComments();
+  const { comments, likeComment, resolveComment, editComment, activeHighlight, setActiveHighlight, setActiveRegionId, panelOpen, setPanelOpen, typeFilter, setTypeFilter } = useComments();
   const [tab, setTab] = useState<'open' | 'resolved'>('open');
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -553,7 +605,7 @@ export function CommentsPanel() {
               <ModeComment className="w-4 h-4 text-primary" />
               <span className="text-sm font-bold text-heading">Comments</span>
               {open.length > 0 && (
-                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[15px] font-bold flex items-center justify-center leading-none">
                   {open.length}
                 </span>
               )}
@@ -574,7 +626,7 @@ export function CommentsPanel() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={cn(
-                  'px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all',
+                  'px-2.5 py-1 rounded-full text-[15px] font-semibold border transition-all',
                   tab === t
                     ? t === 'resolved' ? 'bg-success text-white border-success' : 'bg-primary text-white border-primary'
                     : 'bg-white text-muted-foreground border-border hover:border-primary/40',
@@ -589,7 +641,7 @@ export function CommentsPanel() {
           <div className="px-3 py-2 border-b border-border flex items-center gap-1 flex-wrap">
             <button
               onClick={() => setTypeFilter('all')}
-              className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all', typeFilter === 'all' ? 'bg-heading text-white border-heading' : 'bg-white text-muted-foreground border-border hover:border-primary/30')}
+              className={cn('px-2 py-0.5 rounded-full text-[15px] font-semibold border transition-all', typeFilter === 'all' ? 'bg-heading text-white border-heading' : 'bg-white text-muted-foreground border-border hover:border-primary/30')}
             >
               All
             </button>
@@ -597,7 +649,7 @@ export function CommentsPanel() {
               <button
                 key={type}
                 onClick={() => setTypeFilter(type)}
-                className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border capitalize transition-all', typeFilter === type ? activeCls : 'bg-white text-muted-foreground border-border hover:border-primary/30')}
+                className={cn('px-2 py-0.5 rounded-full text-[15px] font-semibold border capitalize transition-all', typeFilter === type ? activeCls : 'bg-white text-muted-foreground border-border hover:border-primary/30')}
               >
                 {label}
               </button>
@@ -611,7 +663,7 @@ export function CommentsPanel() {
                 <ModeComment className="w-5 h-5 text-muted/40 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">
                   {tab === 'open'
-                    ? 'No comments yet. Select any text to add one.'
+                    ? 'No comments yet. Hover over any content block to add one.'
                     : 'No resolved comments.'}
                 </p>
               </div>
@@ -623,6 +675,7 @@ export function CommentsPanel() {
                   highlighted={activeHighlight === c.selectedText}
                   onHoverEnter={() => setActiveHighlight(c.selectedText)}
                   onHoverLeave={() => setActiveHighlight(null)}
+                  onJumpTo={() => setActiveRegionId(c.sectionId)}
                   onLike={() => likeComment(c.id)}
                   onResolve={() => resolveComment(c.id)}
                   onEdit={body => editComment(c.id, body)}
@@ -634,7 +687,7 @@ export function CommentsPanel() {
           {/* Footer hint */}
           {tab === 'open' && (
             <div className="px-4 py-2 border-t border-border bg-shell">
-              <p className="text-[10px] text-muted-foreground text-center">Select any text to add a comment</p>
+              <p className="text-[15px] text-muted-foreground text-center">Click any content block to comment · Click a comment to jump to its block</p>
             </div>
           )}
         </div>
@@ -650,6 +703,7 @@ function CommentCard({
   highlighted,
   onHoverEnter,
   onHoverLeave,
+  onJumpTo,
   onLike,
   onResolve,
   onEdit,
@@ -658,6 +712,7 @@ function CommentCard({
   highlighted: boolean;
   onHoverEnter: () => void;
   onHoverLeave: () => void;
+  onJumpTo: () => void;
   onLike: () => void;
   onResolve: () => void;
   onEdit: (body: string) => void;
@@ -668,17 +723,20 @@ function CommentCard({
   return (
     <div
       data-comment-sel={comment.selectedText}
-      className={cn('p-3 transition-colors cursor-default', highlighted ? 'bg-amber-50' : 'hover:bg-shell/50')}
+      className={cn('p-3 transition-colors cursor-pointer group', highlighted ? 'bg-amber-50' : 'hover:bg-shell/50')}
       onMouseEnter={onHoverEnter}
       onMouseLeave={onHoverLeave}
+      onClick={e => { if (!(e.target as HTMLElement).closest('button')) onJumpTo(); }}
+      title="Click to jump to this block"
     >
       {/* Section badge + type badge */}
       <div className="flex items-center gap-1.5 flex-wrap mb-2">
-        <p className="text-[10px] font-semibold text-muted-foreground bg-shell border border-border rounded px-1.5 py-0.5">
+        <p className="text-[15px] font-semibold text-muted-foreground bg-shell border border-border rounded px-1.5 py-0.5 group-hover:border-primary/30 group-hover:text-primary transition-colors flex items-center gap-1">
+          <ModeComment className="w-2.5 h-2.5" />
           {comment.sectionLabel}
         </p>
         {comment.type && (
-          <span className={cn('text-[10px] font-semibold rounded px-1.5 py-0.5 capitalize', TYPE_BADGE[comment.type].bg, TYPE_BADGE[comment.type].text)}>
+          <span className={cn('text-[15px] font-semibold rounded px-1.5 py-0.5 capitalize', TYPE_BADGE[comment.type].bg, TYPE_BADGE[comment.type].text)}>
             {comment.type}
           </span>
         )}
@@ -688,17 +746,17 @@ function CommentCard({
       {comment.selectedText && (
         <div className="flex gap-1.5 mb-2">
           <div className="w-0.5 self-stretch rounded bg-amber-400/70 shrink-0" />
-          <p className="text-[10px] text-muted-foreground italic leading-relaxed line-clamp-2">"{comment.selectedText}"</p>
+          <p className="text-[15px] text-muted-foreground italic leading-relaxed line-clamp-2">"{comment.selectedText}"</p>
         </div>
       )}
 
       {/* Author + time */}
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-6 h-6 rounded-full bg-primary-faded text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+        <div className="w-6 h-6 rounded-full bg-primary-faded text-primary text-[14px] font-bold flex items-center justify-center shrink-0">
           {comment.initials}
         </div>
-        <span className="text-[11px] font-semibold text-heading">{comment.author}</span>
-        <span className="text-[10px] text-muted-foreground ml-auto">{comment.createdAt}</span>
+        <span className="text-[16px] font-semibold text-heading">{comment.author}</span>
+        <span className="text-[15px] text-muted-foreground ml-auto">{comment.createdAt}</span>
       </div>
 
       {/* Body — inline edit for own comments */}
@@ -714,11 +772,11 @@ function CommentCard({
           <div className="flex gap-1.5 mt-1.5">
             <button
               onClick={() => { onEdit(editBody); setIsEditing(false); }}
-              className="text-[11px] font-semibold bg-primary text-white px-2.5 py-1 rounded-lg hover:bg-primary/90 transition-colors"
+              className="text-[16px] font-semibold bg-primary text-white px-2.5 py-1 rounded-lg hover:bg-primary/90 transition-colors"
             >Save</button>
             <button
               onClick={() => { setEditBody(comment.body); setIsEditing(false); }}
-              className="text-[11px] text-muted-foreground px-2 py-1 hover:text-foreground transition-colors"
+              className="text-[16px] text-muted-foreground px-2 py-1 hover:text-foreground transition-colors"
             >Cancel</button>
           </div>
         </div>
@@ -730,7 +788,7 @@ function CommentCard({
       {comment.attachments.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {comment.attachments.map(a => (
-            <div key={a.id} className="flex items-center gap-1 bg-shell rounded px-1.5 py-0.5 border border-border text-[10px]">
+            <div key={a.id} className="flex items-center gap-1 bg-shell rounded px-1.5 py-0.5 border border-border text-[15px]">
               <AttachFile className="w-2.5 h-2.5 text-muted-foreground" />
               <span className="truncate max-w-[90px]">{a.name}</span>
               <span className="text-muted-foreground shrink-0">· {a.size}</span>
@@ -741,26 +799,26 @@ function CommentCard({
 
       {/* Actions */}
       {comment.resolved ? (
-        <div className="flex items-center gap-1 text-[10px] text-success font-semibold">
+        <div className="flex items-center gap-1 text-[15px] text-success font-semibold">
           <CheckCircle className="w-3 h-3" />Resolved
         </div>
       ) : (
         <div className="flex items-center gap-3">
           <button
             onClick={onLike}
-            className={cn('flex items-center gap-1 text-[10px] font-semibold transition-colors', comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-primary')}
+            className={cn('flex items-center gap-1 text-[15px] font-semibold transition-colors', comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-primary')}
           >
             <ThumbUp className="w-3 h-3" />{comment.likes > 0 ? comment.likes : ''}
           </button>
           {comment.author === 'You' && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              className="text-[15px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >Edit</button>
           )}
           <button
             onClick={onResolve}
-            className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-success transition-colors ml-auto"
+            className="flex items-center gap-1 text-[15px] font-semibold text-muted-foreground hover:text-success transition-colors ml-auto"
           >
             <CheckCircle className="w-3 h-3" />Resolve
           </button>

@@ -70,6 +70,7 @@ function FormulateStrategyContent() {
   return (
     <>
       <PageHeader
+        sticky
         back={{ to: '..' }}
         title="Formulate Strategy"
         subtitle="Making Better Strategic Choices — which ELT can commit on, in a fast and inexpensive way."

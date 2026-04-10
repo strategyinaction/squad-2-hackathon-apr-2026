@@ -13,12 +13,13 @@ interface PageHeaderProps {
   title: ReactNode
   subtitle?: string
   actions?: ReactNode
+  sticky?: boolean
 }
 
-export function PageHeader({ back, breadcrumbs, title, subtitle, actions }: PageHeaderProps) {
+export function PageHeader({ back, breadcrumbs, title, subtitle, actions, sticky }: PageHeaderProps) {
   const hasNav = back || (breadcrumbs && breadcrumbs.length > 0)
   return (
-    <div className="mb-5">
+    <div className={sticky ? 'mb-5 sticky top-0 z-30 bg-shell pt-4 pb-2 -mt-4' : 'mb-5'}>
       {hasNav && (
         <nav className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
           {back && (
