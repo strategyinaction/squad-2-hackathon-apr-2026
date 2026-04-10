@@ -1,4 +1,6 @@
 import { type ComponentType, useEffect, useRef, useState } from 'react'
+import { useHeader, useUpdateHeader } from '#/lib/api/header'
+import { useHeaderCards, useUpdateHeaderCard, useAddHeaderCard } from '#/lib/api/headerCards'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
@@ -73,18 +75,7 @@ interface Squad {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const INITIAL_HERO: HeroData = {
-  eyebrow: 'Strategy in Action Platform',
-  title: 'The institutional template for strategic management',
-  description:
-    'AI has removed the final barrier. We\'re building what no one has built before: a shared language, structured process, and coordination layer for how organisations formulate, plan, learn from, and adapt their strategy.',
-  blocks: [
-    { id: '1', label: 'Positioning', title: 'Cost Leader vs. Consultancies', subtitle: 'Compress weeks of work into hours' },
-    { id: '2', label: 'Differentiation', title: 'Premium vs. Pure SaaS', subtitle: 'Not software — better strategic outcomes' },
-    { id: '3', label: 'Target ARR', title: '£60–90K / BU / year', subtitle: '"Strategy as a Service" model' },
-    { id: '4', label: 'Core Users', title: 'C-Suite · BU Leaders · Consultants', subtitle: 'Finance Partners · Strategy Office' },
-  ],
-}
+const EMPTY_HERO: HeroData = { eyebrow: '', title: '', description: '', blocks: [] }
 
 const INITIAL_FUNCTIONS: CoreFunction[] = [
   {
@@ -310,9 +301,37 @@ function TourTip() {
 
 function OverviewContent() {
   // ── Hero state ──────────────────────────────────────────────────────────────
+  const { data: headerItem } = useHeader()
+  const { data: headerCards } = useHeaderCards()
+  const updateHeader = useUpdateHeader()
+  const updateHeaderCard = useUpdateHeaderCard()
+  const addHeaderCard = useAddHeaderCard()
   const [heroEditing, setHeroEditing] = useState(false)
-  const [hero, setHero] = useState<HeroData>(INITIAL_HERO)
+  const [hero, setHero] = useState<HeroData>(EMPTY_HERO)
   const [heroSnap, setHeroSnap] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!headerItem) return
+    setHero(prev => ({
+      ...prev,
+      eyebrow: headerItem.title ?? '',
+      title: headerItem.subtitle ?? '',
+      description: headerItem.description ?? '',
+    }))
+  }, [headerItem])
+
+  useEffect(() => {
+    if (!headerCards || heroEditing) return
+    setHero(prev => ({
+      ...prev,
+      blocks: headerCards.map(c => ({
+        id: String(c.id),
+        label: c.title,
+        title: c.subtitle,
+        subtitle: c.description,
+      })),
+    }))
+  }, [headerCards, heroEditing])
 
   // ── Two Core Functions state ────────────────────────────────────────────────
   const [functionsEditing, setFunctionsEditing] = useState(false)
@@ -346,7 +365,24 @@ function OverviewContent() {
 
   // ── Hero edit lifecycle ─────────────────────────────────────────────────────
   function beginHeroEdit() { setHeroSnap(JSON.stringify(hero)); setHeroEditing(true) }
-  function doneHeroEdit() { setHeroSnap(null); setHeroEditing(false) }
+  function doneHeroEdit() {
+    setHeroSnap(null)
+    setHeroEditing(false)
+    if (!headerItem) return
+    updateHeader.mutate({
+      id: headerItem.id,
+      data: { title: hero.eyebrow, subtitle: hero.title, description: hero.description },
+    })
+    hero.blocks.forEach((block, index) => {
+      const numId = Number(block.id)
+      const cardData = { order_value: index, title: block.label, subtitle: block.title, description: block.subtitle }
+      if (!isNaN(numId)) {
+        updateHeaderCard.mutate({ id: numId, data: cardData })
+      } else {
+        addHeaderCard.mutate({ type: 'header_card', ...cardData })
+      }
+    })
+  }
   function cancelHeroEdit() {
     if (heroSnap) setHero(JSON.parse(heroSnap) as HeroData)
     setHeroSnap(null); setHeroEditing(false)
@@ -376,7 +412,7 @@ function OverviewContent() {
     setHero(prev => ({ ...prev, blocks: prev.blocks.map(b => b.id === id ? { ...b, [field]: value } : b) }))
   }
   function addBlock() {
-    setHero(prev => ({ ...prev, blocks: [...prev.blocks, { id: Date.now().toString(), label: 'Label', title: 'Title', subtitle: 'Description' }] }))
+    setHero(prev => ({ ...prev, blocks: [...prev.blocks, { id: `new-${Date.now()}`, label: 'Label', title: 'Title', subtitle: 'Description' }] }))
   }
   function removeBlock(id: string) {
     setHero(prev => ({ ...prev, blocks: prev.blocks.filter(b => b.id !== id) }))
