@@ -6,194 +6,14 @@ import { ExportButton } from '#/components/ExportButton'
 import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
-import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
+import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution, CanvasJTBD } from '#/components/VisionCanvas'
+import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
+import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
+import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD, useDeletePersonaJTBD } from '#/lib/api/personas'
 
 export const Route = createFileRoute('/learn')({ component: LearnAdaptPage })
 
-// ─── Canvas Data ──────────────────────────────────────────────────────────────
-
-const PERSONAS: CanvasPersona[] = [
-  {
-    id: 'elt',
-    label: 'Executive Leadership',
-    quote: '"I need to understand what execution is telling us about our strategy, make timely decisions about where to double down, pivot, or stop, and ensure those decisions actually reach the teams doing the work."',
-    jtbds: [
-      {
-        title: 'Understand what execution data means for the strategy: receive synthesised learning that connects execution signals to strategic hypotheses, not raw dashboards',
-        institutionalTemplate: `Executive learning brief: structured summary connecting execution data to the strategic hypotheses they inform — delivering meaning, not raw metrics. Delivered per review cadence.
-
-Hypothesis health: each strategic hypothesis tracked with validation status (untested, supported, challenged, invalidated) and evidence trail.`,
-        cognitiveAutomation: `AI generates hypothesis-level briefs: for each strategic bet, what the execution data is telling us — is the hypothesis holding, weakening, or invalidated? Synthesised from across all relevant planning units.
-
-Classifies performance issues: distinguishes poor execution (choice is right, implementation is weak) from hypothesis failure (choice itself is flawed).`,
-      },
-      {
-        title: 'Get instant visibility on what needs leadership attention — escalated from the field, flagged by AI, or triggered by hypothesis health changes',
-        institutionalTemplate: `Executive dashboard organised around what requires attention from ELT: pending decisions requiring ELT action, past decisions made (decision log), critical learning briefs.
-
-Structured escalation paths ensure that issues surfaced in check-ins or retrospectives reach the right leadership level without being filtered out by intermediate layers.`,
-        cognitiveAutomation: `AI triages and prioritises incoming decision requests: ranks by strategic impact (which hypotheses and priorities are affected), urgency (time-sensitivity of the window for action), and evidence strength.
-
-Flags decisions that have been pending too long.
-
-Surfaces patterns across escalations: e.g., "three units have independently flagged the same issue this quarter."`,
-      },
-      {
-        title: "Get timely access to critical learning briefs from execution — synthesised insights connecting what's happening in the field to the strategic hypotheses that matter most",
-        institutionalTemplate: `Learning briefs surfaced on the executive dashboard and delivered per review cadence: each brief connects execution signals to the strategic hypothesis it informs, with validation status (supported, challenged, invalidated) and evidence trail.
-
-Briefs are tagged by priority, BU, and hypothesis — filterable and searchable.
-
-Direct link from brief to the underlying check-ins, retrospectives, and metric data that produced it. People can tag specific leaders to learning briefs to get their attention.`,
-        cognitiveAutomation: `AI generates learning briefs by synthesising check-ins, retrospectives, and metric movements from across all relevant planning units.
-
-Highlights what's new since last review.
-
-AI prioritises learning briefs by strategic impact.`,
-      },
-      {
-        title: 'Ensure decisions cascade to affected plans, resources, and teams — and that adaptation actually happens',
-        institutionalTemplate: `Decision cascade log: each decision linked to the plans it affects, with status tracking on whether downstream adjustments have been made.
-
-Escalation for plans that haven't adapted. Change communication templates: structured rationale distributed to all affected plan owners.
-
-Two-way: plan owners can ask questions or flag concerns.`,
-        cognitiveAutomation: `AI monitors cascade completion: alerts when affected plans haven't been updated within the expected timeframe, flags resistance or conflicts.
-
-Communicator agent generates audience-tailored change narratives translating strategic decisions into BU-level and team-level comms.
-
-AI enables natural-language Q&A: "Why was Priority X changed?" returns a traced, evidence-backed explanation.`,
-      },
-    ],
-  },
-  {
-    id: 'cfo',
-    label: 'CFO Office / Finance Business Partner',
-    quote: '"I own the numbers. If the metrics aren\'t defined right, connected to their sources, projected forward, and updated on time, no one can learn from execution — because no one trusts the data."',
-    jtbds: [
-      {
-        title: 'Manage the full lifecycle of key metrics: creation, definition, ownership, integration with source systems, and retirement',
-        institutionalTemplate: `Metrics library: centralised registry of all metrics with standardised definitions, ownership, taxonomy and classification (Financial, Customer, Process, Learning; leading, lagging), data source configuration (manual entry, API, ERP/CRM integration), and update frequency.
-
-Workflow for metric creation, approval, and change management.
-
-Connection mapping: visualises relationships and dependencies between metrics across plans.`,
-        cognitiveAutomation: `AI validates metric definitions for completeness and consistency: flags duplicates, detects metrics that measure the same thing under different names across units, and identifies gaps.
-
-AI suggests metrics to be used and their connections based on causal logic (e.g., "this leading indicator should be linked to that lagging outcome").`,
-      },
-      {
-        title: 'Produce projections and forecasts of key metrics, based on the plans connected to them and their expected impact',
-        institutionalTemplate: `Projection workflow: each metric displays its baseline, target, current actual, and forecast trajectory.
-
-Forecasts linked to the plans and activities expected to drive them, making the causal chain from plan to metric movement explicit.
-
-Scenario views: what happens to metric trajectories if specific plans are delayed, scaled, or stopped.`,
-        cognitiveAutomation: `AI generates metric forecasts by combining historical trends with the expected impact of connected plans.
-
-AI flags where projected trajectories will miss targets given current execution pace.
-
-AI highlights metrics where multiple plans claim impact but actuals aren't moving.`,
-      },
-      {
-        title: 'Ensure timely updates of actual values according to the governance of execution, maintaining one source of truth for all performance data',
-        institutionalTemplate: `Update governance framework: required update cadence per metric (weekly, monthly, quarterly), tied to the overall execution governance.
-
-Dashboard showing update compliance: which metrics are current, which are stale, which are overdue.
-
-Automated ingestion from connected systems where available; structured manual entry workflow with audit trail where not.`,
-        cognitiveAutomation: `AI monitors update compliance and flags overdue metrics before review cycles.
-
-Pre-populates actuals from connected data sources (ERP, CRM, project tools) where integrations exist.
-
-Reads structured and unstructured exports from legacy systems to capture data and update metrics.
-
-Flags data quality issues: missing updates, stale metrics, inconsistencies between related metrics, and values that fall outside expected ranges.`,
-      },
-    ],
-  },
-  {
-    id: 'planowner',
-    label: 'Plan Owner / Team Lead',
-    quote: '"I\'m closest to the work. I see what the numbers don\'t capture. When leadership changes direction, I need to know quickly, understand why, and adjust rapidly."',
-    jtbds: [
-      {
-        title: 'Capture periodic learning: not just what happened, but why, and what it means for the strategy',
-        institutionalTemplate: `Structured check-in workflows, combining milestone status with interpretation prompts: what happened, why, what does it mean for our hypothesis, what should change.
-
-Standardised format feeds both team dashboards and upstream aggregation.
-
-Escalation mechanism: flag an issue as requiring attention, with structured severity and category.`,
-        cognitiveAutomation: `AI prompts reflection based on metric actual updates: "Outcome X moved significantly: what do you think caused this?"
-
-AI suggests connections to strategic hypotheses and flags where similar patterns have been observed in other units.
-
-AI identifies signals that warrant attention before they're missed.
-
-AI generates learning briefs that can be shared with the rest of the organisation.`,
-      },
-      {
-        title: 'Access role-specific critical information in one view: my plan context, my metrics, my open actions, upstream decisions that affect me',
-        institutionalTemplate: `Role-based and personalised dashboard: my plan's strategic context (parent priority, hypothesis), my metrics, my open actions, and any upstream decisions that affect me — all in one view.`,
-        cognitiveAutomation: `AI generates a periodic brief: what's changed in my plan's context, what needs my attention, and what's coming up in the review cycle.`,
-      },
-      {
-        title: 'Receive and act on upstream decisions that affect my plan — with clear context on what changed, why, and what I need to adjust',
-        institutionalTemplate: `Cascade notification system: when a parent priority or strategic choice changes, affected plan owners receive structured alerts with the change, rationale, and expected impact.
-
-Plan revision workflow: update objectives, metrics, or activities in response, with change history preserved.`,
-        cognitiveAutomation: `Communicator agent translates upstream decisions into plan-owner-level language: "Priority X has been adjusted because [rationale]. For your plan, this means [specific implications]."
-
-AI suggests specific plan adjustments, flagging metrics that need new targets, and pre-populating revised objectives.`,
-      },
-    ],
-  },
-  {
-    id: 'strategyoffice',
-    label: 'Strategy Office',
-    quote: '"I need to aggregate learning across dozens of teams, surface the patterns that matter, prepare leadership to decide, and ensure those decisions cascade — without reading hundreds of reports."',
-    jtbds: [
-      {
-        title: 'Aggregate learning across the portfolio and surface systemic patterns from team to BU to enterprise',
-        institutionalTemplate: `Team-level check-ins and learning briefs automatically roll up to BU and enterprise views. Structured summaries per BU, per strategic priority, per hypothesis.
-
-Portfolio analytics dashboard: cross-plan views of outcome metrics, delivery status, and hypothesis health.
-
-Filterable by BU, priority, governance mode, and time period.`,
-        cognitiveAutomation: `AI synthesises team-level learning into BU-level insight briefs: patterns across units, converging/diverging signals, hypotheses being validated or challenged.
-
-AI performs cross-portfolio pattern analysis: identifies systemic issues (e.g., "all units targeting capability X are underperforming"), correlations between execution patterns and outcomes, and early warning signals.`,
-      },
-      {
-        title: 'Produce QBR reports and prepare leadership for decisions, synthesising execution data, learning, and strategic implications into actionable briefs',
-        institutionalTemplate: `QBR report template: standardised structure combining execution metrics, learning summaries, hypothesis status, and decision prompts. Consistent format across all BUs.
-
-Structured review preparation: curated list of insights, flagged issues, and open questions per strategic priority — ready for QBR or strategy review discussions.`,
-        cognitiveAutomation: `Programme Manager agent generates draft QBR reports from platform data, synthesising metrics, team learning, and strategic context into a coherent brief.
-
-Highlights the 3–5 issues most requiring leadership attention.
-
-Strategic Advisor agent identifies the highest-impact questions: which bets need re-evaluation, where new information challenges existing assumptions, what trade-offs are becoming urgent.`,
-      },
-      {
-        title: 'Track decisions from insight to implementation — ensuring nothing falls through the cracks',
-        institutionalTemplate: `Decision register: each decision captured with its trigger (learning/insight), rationale, owner, deadline, affected plans, and implementation status. Full audit trail from signal to action.
-
-Cascade management workflow: when a strategic decision changes a priority, the platform maps all affected plans and generates a cascade action list — who needs to change what, by when.`,
-        cognitiveAutomation: `AI monitors decision implementation: flags overdue decisions, tracks whether downstream plan adjustments have actually been made, alerts when a decision's intended effect is not materialising in the data.
-
-Performs impact analysis: models which plans, metrics, and resource allocations are affected by a strategic change, and generates a prioritised cascade plan.`,
-      },
-      {
-        title: 'Support the yearly strategy refresh by surfacing accumulated learning, structured as input to the next formulation round',
-        institutionalTemplate: `Strategy refresh package: accumulated learning, hypothesis outcomes, decision history, and performance trends over the full cycle — structured by Canvas dimension as input to the Formulate squad.`,
-        cognitiveAutomation: `AI generates a strategy refresh brief: what we learned, what held up, what didn't, and what the data suggests for the next strategic cycle.
-
-Connects execution learning back to Canvas dimensions — closing the loop between Learn & Adapt and Formulate.`,
-      },
-    ],
-  },
-]
+// ─── Static Canvas Data ───────────────────────────────────────────────────────
 
 const PAINS: CanvasPain[] = [
   { id: 1, title: 'No structured mechanism for capturing learning', description: 'Check-ins happen, QBRs are held, but the insights generated in these moments are trapped in meeting notes, emails, or individual memory. There is no systematic way to capture what was learned, by whom, and what it means for the strategy.' },
@@ -272,8 +92,96 @@ const SUCCESS_ITEMS: CanvasSuccess[] = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function jtbdTitle(j: string | CanvasJTBD): string {
+  return typeof j === 'string' ? j : j.title
+}
+
 function LearnAdaptContent() {
   const [detailedView, setDetailedView] = useState(false)
+
+  // Vision hooks
+  const { data: visionCard, isLoading: visionCardLoading } = useVisionCard('learn')
+  const { data: visionCallouts, isLoading: calloutsLoading } = useVisionCardCallouts('learn')
+  const updateVisionCard = useUpdateVisionCard('learn')
+  const updateVisionCardCallout = useUpdateVisionCardCallout('learn')
+  const addVisionCardCallout = useAddVisionCardCallout('learn')
+
+  // Persona hooks
+  const { data: personaItems, isLoading: personasItemsLoading } = usePersonas('learn')
+  const { data: jtbdItems, isLoading: jtbdsLoading } = usePersonaJTBDs('learn')
+  const updatePersona = useUpdatePersona('learn')
+  const addPersona = useAddPersona('learn')
+  const updatePersonaJTBD = useUpdatePersonaJTBD('learn')
+  const addPersonaJTBD = useAddPersonaJTBD('learn')
+  const deletePersonaJTBD = useDeletePersonaJTBD('learn')
+
+  const visionLoading = visionCardLoading || calloutsLoading
+  const personasLoading = personasItemsLoading || jtbdsLoading
+
+  // Map VisionCard
+  const visionStatement = visionCard?.title ?? ''
+  const visionDetail = visionCard?.description ?? ''
+  const visionCallout = visionCallouts?.[0]
+    ? { label: visionCallouts[0].title ?? '', body: visionCallouts[0].description ?? '' }
+    : undefined
+
+  // Map Personas + JTBDs from API → CanvasPersona[]
+  const personas: CanvasPersona[] = personaItems && jtbdItems
+    ? personaItems.map(p => ({
+        id: String(p.id),
+        label: p.title ?? '',
+        quote: p.description ?? '',
+        jtbds: jtbdItems
+          .filter(j => j.parent_id === p.id)
+          .map(j => (j.subtitle || j.description)
+            ? { title: j.title ?? '', institutionalTemplate: j.subtitle ?? undefined, cognitiveAutomation: j.description ?? undefined } as CanvasJTBD
+            : j.title ?? ''
+          ),
+      }))
+    : []
+
+  function handleSaveVision(vision: { statement: string; detail: string; callout?: { label: string; body: string } }) {
+    if (visionCard) {
+      updateVisionCard.mutate({ id: visionCard.id, data: { title: vision.statement, description: vision.detail } })
+    }
+    if (vision.callout) {
+      if (visionCallouts?.[0]) {
+        updateVisionCardCallout.mutate({ id: visionCallouts[0].id, data: { title: vision.callout.label, description: vision.callout.body } })
+      } else {
+        addVisionCardCallout.mutate({ type: 'learn_vision_card_callout', title: vision.callout.label, subtitle: null, description: vision.callout.body, order_value: 1, parent_id: null })
+      }
+    }
+  }
+
+  function handleSavePersonas(updatedPersonas: CanvasPersona[]) {
+    updatedPersonas.forEach((persona, pIndex) => {
+      const numId = Number(persona.id)
+      const personaData = { title: persona.label, description: persona.quote, order_value: pIndex + 1 }
+      if (!isNaN(numId)) {
+        updatePersona.mutate({ id: numId, data: personaData })
+        // Update/add JTBDs for existing persona
+        const existingJtbds = jtbdItems?.filter(j => j.parent_id === numId) ?? []
+        persona.jtbds.forEach((jtbd, jIndex) => {
+          const title = jtbdTitle(jtbd)
+          const inst = typeof jtbd !== 'string' ? jtbd.institutionalTemplate ?? null : null
+          const cog = typeof jtbd !== 'string' ? jtbd.cognitiveAutomation ?? null : null
+          const existingJtbd = existingJtbds[jIndex]
+          if (existingJtbd) {
+            updatePersonaJTBD.mutate({ id: existingJtbd.id, data: { title, subtitle: inst, description: cog, order_value: jIndex + 1 } })
+          } else {
+            addPersonaJTBD.mutate({ type: 'learn_persona_jtbd', title, subtitle: inst, description: cog, order_value: jIndex + 1, parent_id: numId })
+          }
+        })
+        // Delete JTBDs that were removed
+        existingJtbds.slice(persona.jtbds.length).forEach(j => {
+          deletePersonaJTBD.mutate(j.id)
+        })
+      } else {
+        addPersona.mutate({ type: 'learn_persona', ...personaData, subtitle: null, parent_id: null })
+      }
+    })
+  }
+
   return (
     <>
       <PageHeader
@@ -300,16 +208,20 @@ function LearnAdaptContent() {
           <VisionCanvas
             accent="success"
             canvasId="learn"
-            visionStatement="A world where every execution cycle generates actionable learning that flows automatically up the organisation, triggers timely decisions, and cascades change down to every affected plan and team."
-            visionDetail="The organisation builds institutional memory — strategy evolves continuously rather than being reset at the annual offsite. The loop between strategy and execution finally closes."
-            visionCallout={{ label: 'The Learning Loop Closes the Circle', body: 'The yearly strategy refresh is supported by a full year of accumulated, structured learning — surfaced as input to the Formulate squad. What we learned, what held up, what didn\'t, and what the data suggests for the next strategic cycle.' }}
-            personas={PERSONAS}
+            visionStatement={visionStatement}
+            visionDetail={visionDetail}
+            visionCallout={visionCallout}
+            personas={personas}
             pains={PAINS}
             painSubtitle="The link between strategy and execution is one-directional: strategy flows down, but learning never flows back up."
             painCallout={{ label: 'The Overall Result', body: 'The organisation may have fragments of a learning loop but no adaptation loop. Learnings don\'t accumulate; nothing changes. Strategy becomes a retrospective exercise, not a living capability.', isDestructive: true }}
             solutions={SOLUTIONS}
             successItems={SUCCESS_ITEMS}
             detailedView={detailedView}
+            onSaveVision={handleSaveVision}
+            visionLoading={visionLoading}
+            onSavePersonas={handleSavePersonas}
+            personasLoading={personasLoading}
           />
         </CommentableRegion>
         <CommentsPanel />

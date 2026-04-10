@@ -6,195 +6,14 @@ import { ExportButton } from '#/components/ExportButton'
 import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
-import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
+import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution, CanvasJTBD } from '#/components/VisionCanvas'
+import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
+import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
+import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD, useDeletePersonaJTBD } from '#/lib/api/personas'
 
 export const Route = createFileRoute('/plan')({ component: StrategicPlanPage })
 
-// ─── Canvas Data ──────────────────────────────────────────────────────────────
-
-const PERSONAS: CanvasPersona[] = [
-  {
-    id: 'elt',
-    label: 'Executive Leadership',
-    quote: '"I need to shape a strategic plan that translates our choices into a coherent set of priorities, cascade it across the organisation, and verify that the whole adds up — before execution begins."',
-    jtbds: [
-      {
-        title: 'Select the building blocks of the strategic plan: strategic priorities, enabling priorities, and strategic projects — anchored to the strategic choices and winning ambition',
-        institutionalTemplate: `Priority selection workflow linked to the Strategy Canvas: each candidate priority displays its connection to one or more strategic choices (and to the Winning Ambition).
-
-Structured taxonomy by type (strategic, enabling) and horizon (H1-Core, H2-Scale, H3-Future).
-
-Visual coverage map showing which choices are served and which are uncovered.`,
-        cognitiveAutomation: `AI proposes candidate priorities derived from the strategic choices and their underlying hypotheses.
-
-AI flags gaps — choices with no supporting priority — and overlaps — priorities that duplicate effort across dimensions.
-
-AI scores coherence between the priority portfolio and the Winning Ambition.`,
-      },
-      {
-        title: 'Plan each strategic priority in all its necessary elements: objective, key results, hypotheses, timeline, activities, team, financial envelope, and risk',
-        institutionalTemplate: `Structured charter template (consistent across all plan types) that enforces completeness: objective linked to rationale, 2–4 key results with baselines and targets, hypotheses in If/Then/Because format with confidence levels, milestones, benefits, CapEx/OpEx, and risk register.
-
-Draft vs. publish workflow. Quality gates prevent publication of incomplete plans.`,
-        cognitiveAutomation: `AI generates a structured Q&A wizard that walks the user through each charter element step by step — proposing draft answers grounded in the strategic context (choices, hypotheses, winning ambition) that the user can accept, edit, or overwrite. The user remains in control; the AI accelerates, it does not dictate.
-
-AI Strategic Advisor stress-tests the completed charter's internal logic: do the activities plausibly produce the key results? Do the hypotheses cover the critical assumptions?`,
-      },
-      {
-        title: 'Cascade the strategic plan across business units and country units, preserving strategic intent while allowing local contextualisation',
-        institutionalTemplate: `Hierarchical cascade structure according to the governance structure previously set.
-
-Each child plan inherits its parent's strategic context, hypotheses, and outcome expectations.
-
-Cascade vs. Contributes connection types define rigidity. Cascade tracker shows completion status per unit: which units have published aligned plans, which are still in draft, which have not started.`,
-        cognitiveAutomation: `AI suggests draft cascade plans per unit, adapting parent priorities to local context (market, competitive position, regulatory environment) while preserving strategic alignment.
-
-Flags units that have not initiated cascade.
-
-Detects semantic drift: where a child plan's content has diverged from the parent's intent.`,
-      },
-      {
-        title: 'Review the overall strategic plan across units to ensure coherence — coverage, alignment, MECE-ness, and financial feasibility',
-        institutionalTemplate: `Portfolio view: all plans visible in a single grid, filterable by BU, country, plan type, horizon, and status.
-
-Cross-plan comparison using identical structure and fields.
-
-Aggregated financial view: total investment per priority, per unit, per horizon — surfacing over/under-allocation against strategic weight.
-
-Connection map visualising the full cascade tree with alignment indicators.`,
-        cognitiveAutomation: `AI performs portfolio-level coherence analysis: identifies orphan plans (no parent linkage), uncovered priorities (strategic choices with no downstream plans), conflicting objectives between sibling units, and MECE violations (overlaps and gaps).
-
-Generates a coherence scorecard with specific remediation prompts.`,
-      },
-    ],
-  },
-  {
-    id: 'teamlead',
-    label: 'Team Lead / Plan Owner',
-    quote: '"I need to turn a strategic priority into an annual plan my team can own and deliver — with clear objectives, measurable outcomes, and a direct line back to the strategy."',
-    jtbds: [
-      {
-        title: 'Break down a strategic priority into team-level annual OKRs and/or Initiatives, selecting the right planning instrument for each piece of work',
-        institutionalTemplate: `Each annual plan (OKR or Initiative) is created within the context of its parent strategic priority, inheriting strategic context, hypotheses, and outcome expectations.
-
-Structured templates per plan type: OKRs for outcome-driven goals, Initiatives for scoped deliverables.
-
-Parent-child linkage enforced; the team lead sees exactly which priority they are serving and what success looks like upstream.`,
-        cognitiveAutomation: `AI generates a structured Q&A conversation that guides the decomposition: proposes candidate OKRs or Initiatives derived from the parent priority's logic and the team's domain, with suggested answers the user can accept, edit, or overwrite.
-
-AI flags any gap (e.g. where the parent priority's key results are not yet covered by any child plan).
-
-AI suggests the appropriate plan type (OKR vs. Initiative).`,
-      },
-      {
-        title: 'Plan each OKR or Initiative fully: objective, key results, hypotheses, timeline, activities, team, and financial envelope',
-        institutionalTemplate: `Structured charter (consistent across units) that enforces completeness: objective linked to rationale and parent priority, 2–4 key results with baselines and targets, hypotheses in If/Then/Because format, milestones, activities, team allocation, and budget (CapEx/OpEx).
-
-Draft vs. publish workflow with quality gates. Visual lineage always visible: team goal → BU priority → corporate strategy.`,
-        cognitiveAutomation: `AI walks the user through the charter step by step, proposing draft answers grounded in the parent priority's context and the team's historical data.
-
-Suggests key results aligned to the parent's outcome expectations, generates hypotheses from the team's specific execution logic, and flags gaps or inconsistencies.
-
-Strategic Advisor stress-tests the completed plan: do the activities plausibly produce the key results? Is the financial envelope realistic given scope?`,
-      },
-      {
-        title: "Review the overall annual plan for consistency, coherence, and coverage across the team's OKRs and Initiatives",
-        institutionalTemplate: `Annual Plan overview showing all of the team's plans in a single view: objectives, key results, timelines, and parent linkages.
-
-Visual indicators for coverage (which parent key results are addressed), overlap (duplicate effort across plans), and conflicts.`,
-        cognitiveAutomation: `AI performs coherence analysis across the team's annual plan portfolio: flags objectives that overlap or conflict, identifies parent key results with no downstream coverage, detects timeline bottlenecks where too many milestones converge, and checks that aggregated financial commitments fit within the team's budget envelope.
-
-Generates a coherence summary with specific items to resolve before publishing.`,
-      },
-    ],
-  },
-  {
-    id: 'strategyoffice',
-    label: 'Strategy Office / Consultants',
-    quote: '"I need to design how planning works, drive it to completion across all units, and guarantee that the result is coherent — before anyone starts executing."',
-    jtbds: [
-      {
-        title: 'Design and configure the planning governance — cadence, cascading rules, approval gates, and governance modes per organisational unit',
-        institutionalTemplate: `Governance configuration workspace: define how many cascade levels, planning taxonomy per unit (OKR, PMO stage-gate, Programme, hybrid), required vs. optional charter fields per mode, approval workflows, and review cadence.
-
-Template library of pre-built planning models adaptable to different organisational contexts.
-
-Cascade rigidity settings (tight / moderate / loose) control how much freedom child plans have to diverge from parent intent.`,
-        cognitiveAutomation: `AI recommends governance configurations based on Q&As on organisational complexity, number of planning units, and the nature of each unit's work (team size, time horizon, dependency profile).
-
-AI suggests which units suit OKR vs. PMO vs. Programme modes. Flags where governance settings may be too rigid (stifling local adaptation) or too loose (risking strategic drift), based on Q&A conversations.`,
-      },
-      {
-        title: 'Orchestrate the end-to-end planning process — drive planning to completion across all units within deadlines and quality standards',
-        institutionalTemplate: `Planning process dashboard: real-time view of planning status across all organisational units — who has published, who is in draft, who has not started.
-
-Milestone tracker per planning cycle with ownership and deadlines. Notification engine that prompts plan owners at key gates.
-
-Quality gates enforced per governance mode: plans cannot be published until mandatory fields are complete and parent linkage is established.`,
-        cognitiveAutomation: `AI monitors planning progress and identifies bottlenecks: units falling behind schedule, plans stuck in draft with incomplete sections, approval queues creating delays.
-
-Generates status briefs for the Strategy Office highlighting where intervention is needed. Sends contextualised nudges to plan owners — not generic reminders, but specific prompts ("Your OKR is missing key results for parent KR #3").`,
-      },
-      {
-        title: 'Assure quality and coherence across the full cascade — cross-unit review, MECE analysis, and alignment validation before plans go live',
-        institutionalTemplate: `Cross-plan comparison views: identical structure and fields across all units, enabling side-by-side analysis at every cascade level.
-
-Portfolio views (scope × horizon) showing the full plan landscape. Overlap and gap detection across sibling plans.
-
-Aggregated financial view: total investment per priority, per unit, per horizon.
-
-Alignment dashboard: % of plans linked, % with outcome metrics, % passing quality gates.`,
-        cognitiveAutomation: `AI performs portfolio-level coherence analysis: identifies orphan plans (no parent linkage), uncovered priorities (strategic choices with no downstream plans), conflicting objectives between sibling units, and MECE violations (overlaps and gaps).
-
-Generates a coherence scorecard with specific remediation items — actionable, not just diagnostic.`,
-      },
-    ],
-  },
-  {
-    id: 'cfo',
-    label: 'CFO / Finance Partner',
-    quote: '"I need to build the financial plan that funds the strategy, ensure resource allocation actually reflects the strategic choices, and flag where ambition exceeds financial reality — before we commit."',
-    jtbds: [
-      {
-        title: 'Formulate the financial plan (long-range and annual) connected to strategic priorities — every financial line linked to a strategic rationale, every priority backed by a financial envelope',
-        institutionalTemplate: `Financial plan structure linked to each planning unit: CapEx, OpEx, revenue projections, and investment requirements connected to the priorities they fund.
-
-Dual-horizon view (long-range + annual). AOP template linking each annual objective to its parent strategic priority, with required fields for resource requirements (people, budget) and financial projections (revenue impact, cost savings).
-
-Structured connection between operating plan and financial plan: no financial line without a strategic rationale, no strategic priority without a financial envelope.
-
-Integrates with FP&A software when available at the client.`,
-        cognitiveAutomation: `Via structured Q&A conversations, AI generates draft financial projections across multiple planning scenarios, based on strategic plan commitments, historical patterns, and benchmark data.
-
-Flags orphan lines: priorities with no financial allocation and budget lines with no strategic justification.
-
-Pre-populates AOP financial fields from parent priority data where available.`,
-      },
-      {
-        title: 'Ensure resource allocation reflects the direction of strategic change — verify the money is actually shifting where the strategy demands it',
-        institutionalTemplate: `Resource allocation view overlaid on the strategic portfolio: spend per priority, per BU, per horizon.
-
-Year-on-year allocation comparison showing how spend has moved relative to strategic intent.
-
-Configurable allocation rules and thresholds.`,
-        cognitiveAutomation: `AI analyses allocation patterns against the strategic choices and their implied From→To shifts. Core question: is the organisation funding the change it declared, or is money flowing to the same places it always flowed?
-
-AI highlights the gap between declared strategy and revealed strategy (i.e., where the money actually goes).`,
-      },
-      {
-        title: 'Stress-test the financial feasibility of the strategic plan: surface where ambition exceeds capacity and force explicit trade-offs',
-        institutionalTemplate: `Gap analysis view: strategic commitments that exceed financial capacity, and financial reserves not allocated to any strategic priority.
-
-Scenario modelling workspace: model the financial implications of different portfolio configurations (e.g., what if we fund Priority A at full ambition — what must we cut?).`,
-        cognitiveAutomation: `AI models financial feasibility under different scenarios — flagging where ambitions outstrip resources and quantifying the trade-offs.
-
-Suggests rebalancing options: which priorities could absorb a budget reduction with minimal impact on key results, and which are underfunded relative to their strategic weight.
-
-Simulates the cascade effect of reallocation decisions across units.`,
-      },
-    ],
-  },
-]
+// ─── Static Canvas Data ───────────────────────────────────────────────────────
 
 const PAINS: CanvasPain[] = [
   { id: 1, title: 'The "why" has been lost', description: 'Teams receive objectives but not the reasoning behind them. They don\'t know what the organisation is betting on, what assumptions have been made, or what success is really supposed to look like. They execute in the dark.', personaIds: ['elt', 'teamlead', 'strategyoffice'] },
@@ -258,8 +77,96 @@ const SUCCESS_ITEMS: CanvasSuccess[] = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function jtbdTitle(j: string | CanvasJTBD): string {
+  return typeof j === 'string' ? j : j.title
+}
+
 function StrategicPlanContent() {
   const [detailedView, setDetailedView] = useState(false)
+
+  // Vision hooks
+  const { data: visionCard, isLoading: visionCardLoading } = useVisionCard('plan')
+  const { data: visionCallouts, isLoading: calloutsLoading } = useVisionCardCallouts('plan')
+  const updateVisionCard = useUpdateVisionCard('plan')
+  const updateVisionCardCallout = useUpdateVisionCardCallout('plan')
+  const addVisionCardCallout = useAddVisionCardCallout('plan')
+
+  // Persona hooks
+  const { data: personaItems, isLoading: personasItemsLoading } = usePersonas('plan')
+  const { data: jtbdItems, isLoading: jtbdsLoading } = usePersonaJTBDs('plan')
+  const updatePersona = useUpdatePersona('plan')
+  const addPersona = useAddPersona('plan')
+  const updatePersonaJTBD = useUpdatePersonaJTBD('plan')
+  const addPersonaJTBD = useAddPersonaJTBD('plan')
+  const deletePersonaJTBD = useDeletePersonaJTBD('plan')
+
+  const visionLoading = visionCardLoading || calloutsLoading
+  const personasLoading = personasItemsLoading || jtbdsLoading
+
+  // Map VisionCard
+  const visionStatement = visionCard?.title ?? ''
+  const visionDetail = visionCard?.description ?? ''
+  const visionCallout = visionCallouts?.[0]
+    ? { label: visionCallouts[0].title ?? '', body: visionCallouts[0].description ?? '' }
+    : undefined
+
+  // Map Personas + JTBDs from API → CanvasPersona[]
+  const personas: CanvasPersona[] = personaItems && jtbdItems
+    ? personaItems.map(p => ({
+        id: String(p.id),
+        label: p.title ?? '',
+        quote: p.description ?? '',
+        jtbds: jtbdItems
+          .filter(j => j.parent_id === p.id)
+          .map(j => (j.subtitle || j.description)
+            ? { title: j.title ?? '', institutionalTemplate: j.subtitle ?? undefined, cognitiveAutomation: j.description ?? undefined } as CanvasJTBD
+            : j.title ?? ''
+          ),
+      }))
+    : []
+
+  function handleSaveVision(vision: { statement: string; detail: string; callout?: { label: string; body: string } }) {
+    if (visionCard) {
+      updateVisionCard.mutate({ id: visionCard.id, data: { title: vision.statement, description: vision.detail } })
+    }
+    if (vision.callout) {
+      if (visionCallouts?.[0]) {
+        updateVisionCardCallout.mutate({ id: visionCallouts[0].id, data: { title: vision.callout.label, description: vision.callout.body } })
+      } else {
+        addVisionCardCallout.mutate({ type: 'plan_vision_card_callout', title: vision.callout.label, subtitle: null, description: vision.callout.body, order_value: 1, parent_id: null })
+      }
+    }
+  }
+
+  function handleSavePersonas(updatedPersonas: CanvasPersona[]) {
+    updatedPersonas.forEach((persona, pIndex) => {
+      const numId = Number(persona.id)
+      const personaData = { title: persona.label, description: persona.quote, order_value: pIndex + 1 }
+      if (!isNaN(numId)) {
+        updatePersona.mutate({ id: numId, data: personaData })
+        // Update/add JTBDs for existing persona
+        const existingJtbds = jtbdItems?.filter(j => j.parent_id === numId) ?? []
+        persona.jtbds.forEach((jtbd, jIndex) => {
+          const title = jtbdTitle(jtbd)
+          const inst = typeof jtbd !== 'string' ? jtbd.institutionalTemplate ?? null : null
+          const cog = typeof jtbd !== 'string' ? jtbd.cognitiveAutomation ?? null : null
+          const existingJtbd = existingJtbds[jIndex]
+          if (existingJtbd) {
+            updatePersonaJTBD.mutate({ id: existingJtbd.id, data: { title, subtitle: inst, description: cog, order_value: jIndex + 1 } })
+          } else {
+            addPersonaJTBD.mutate({ type: 'plan_persona_jtbd', title, subtitle: inst, description: cog, order_value: jIndex + 1, parent_id: numId })
+          }
+        })
+        // Delete JTBDs that were removed
+        existingJtbds.slice(persona.jtbds.length).forEach(j => {
+          deletePersonaJTBD.mutate(j.id)
+        })
+      } else {
+        addPersona.mutate({ type: 'plan_persona', ...personaData, subtitle: null, parent_id: null })
+      }
+    })
+  }
+
   return (
     <>
       <PageHeader
@@ -286,16 +193,20 @@ function StrategicPlanContent() {
           <VisionCanvas
             accent="warning"
             canvasId="plan"
-            visionStatement="A world where every plan traces back to a strategic choice, states not just what but why it will work, and evolves continuously as execution generates learning."
-            visionDetail="Plans are not documents — they are shared commitments and testable experiments. Every team, from executive leadership to the front line, works from a plan that is connected, hypothesis-driven, outcome-focused, living, and financially linked."
-            visionCallout={{ label: 'Cascade & Aggregation', body: 'The platform provides granular cascade and aggregation — one of its most distinctive capabilities. Cascade flows top-down; aggregation flows bottom-up. Because hypotheses and assumptions are explicit, execution generates learning seamlessly.' }}
-            personas={PERSONAS}
+            visionStatement={visionStatement}
+            visionDetail={visionDetail}
+            visionCallout={visionCallout}
+            personas={personas}
             pains={PAINS}
             painSubtitle="A compelling strategic priority, agreed at the top, loses its meaning as it cascades through organisational layers — each level reinterpreting it, filtering it, or burying it under a pile of activities."
             painCallout={{ label: 'The Result', body: 'Teams are busy, managers are reporting, and leadership has no idea whether the organisation is making strategic progress or just spinning.', isDestructive: true }}
             solutions={SOLUTIONS}
             successItems={SUCCESS_ITEMS}
             detailedView={detailedView}
+            onSaveVision={handleSaveVision}
+            visionLoading={visionLoading}
+            onSavePersonas={handleSavePersonas}
+            personasLoading={personasLoading}
           />
         </CommentableRegion>
         <CommentsPanel />
