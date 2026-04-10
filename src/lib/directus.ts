@@ -8,6 +8,7 @@ export interface ContentItem {
   subtitle: string | null
   description: string | null
   order_value: number | null
+  parent_id: number | null
 }
 
 interface DirectusSchema {

@@ -7,163 +7,14 @@ import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
+import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
+import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
+import { usePersonas, usePersonaJTBDs, useUpdatePersona, useAddPersona, useUpdatePersonaJTBD, useAddPersonaJTBD } from '#/lib/api/personas'
+import type { CanvasJTBD } from '#/components/VisionCanvas'
 
 export const Route = createFileRoute('/formulate')({ component: FormulateStrategyPage })
 
-// ─── Canvas Data ──────────────────────────────────────────────────────────────
-
-const PERSONAS: CanvasPersona[] = [
-  {
-    id: 'elt',
-    label: 'Executive Leadership',
-    quote: '"I need to make high-stakes strategic choices with confidence — grounded in rigorous data and analysis, not gut feel and politics."',
-    jtbds: [
-      {
-        title: 'Understand the current strategic situation — where we play, how we win, how we operate — all in the form of specific, unique insights derived from data',
-        institutionalTemplate: `Structured Canvas views for each area of choice (Winning Ambition, Playing Field, Value Proposition, Operating Model) with insights and data visualisation.
-
-Deep dives into data (single source of truth) for each curated insight through standard, engaging visuals.
-
-Curated reports available for collaborative validation, comments, and threads.`,
-        cognitiveAutomation: `Query and discuss the results of the analysis: users and AI can discuss in depth the reports, insights, and data — using both the originally prioritised Strategic Questions and new, custom ones.
-
-Users can build and adapt interactive data visualisations to explore different angles of the same insights.`,
-      },
-      {
-        title: 'Evaluate strategic options and make explicit choices of what to maintain, what to change (From–To), and what to stop doing',
-        institutionalTemplate: `Structured workflows and templates to assess options and make choices (organised around the structure of the Canvas): choices we confirm, changes to current choices (From–To), and what to stop doing.
-
-Auditable trail linking each choice to the insights and evidence that informed it — why we chose this path, what options we excluded and why, what data and insights we leveraged for each choice.`,
-        cognitiveAutomation: `Strategic Advisor agent guides and suggests choices, and challenges users' own choices against established theory, historical precedents, and cross-industry benchmarks to surface blind spots and biases. Effective in workshops, meetings, or single-user sessions.
-
-Simulator agent models "what if" scenarios across different strategic paths, projecting financial, competitive, and operational outcomes.
-
-Conflict and tension detection across different areas of choice — highlights overall coherence and identifies points of friction.`,
-      },
-      {
-        title: 'Verbalise the hypotheses and assumptions behind each strategic choice, so they can be effectively tested during execution',
-        institutionalTemplate: `Hypothesis and assumption fields linked to each strategic choice.
-
-Assumption register with validation status tracking (untested, confirmed, challenged, invalidated).`,
-        cognitiveAutomation: `AI prompts leadership to articulate implicit assumptions behind each choice.
-
-Suggests hypotheses based on the strategic logic and available evidence.
-
-Flags critical untested assumptions and recommends validation approaches.`,
-      },
-      {
-        title: 'Engage the leadership teams across the organisation around a shared strategic narrative',
-        institutionalTemplate: `Shared artefacts (documents, visuals, etc.) version-controlled and easily cascaded and aggregated across organisational units.
-
-Collaborative annotation and commenting.
-
-Tracking: who has reviewed, endorsed, or challenged each element of the strategy.`,
-        cognitiveAutomation: `AI detects inconsistencies and gaps across organisational units' strategies.
-
-AI generates alignment and coherence summaries/scorecards highlighting areas of convergence and divergence. Flags where BU choices may conflict or where the corporate strategy is not adequately reflected at unit level.`,
-      },
-      {
-        title: 'Communicate the strategy to stakeholders in a way that builds commitment — compelling narratives, with deep-dives into insights, assumptions, and data where necessary',
-        institutionalTemplate: `Multi-level, in-app, interactive narratives and visualisation to communicate the strategy at any organisational unit level.
-
-Comments, threads, and social engagement features on such narratives.
-
-Exportable documents to engage target audiences in a more traditional way.`,
-        cognitiveAutomation: `Communicator agent generates tailored narratives for different audiences, adapting tone, detail level, and emphasis.
-
-Produces board-ready summaries, manager briefings, and team-level explanations from the same underlying strategic data.
-
-Enables natural-language Q&A: stakeholders can ask "why did we choose X?" and get a traced, evidence-backed answer.`,
-      },
-    ],
-  },
-  {
-    id: 'consultants',
-    label: 'Strategy Office / Consultants',
-    quote: '"I need to facilitate a rigorous, repeatable strategy process that produces high-quality outputs, without drowning in data gathering and slide production. I need full control on the generation of contents, and to enable clients to validate or challenge preliminary outputs along the way."',
-    jtbds: [
-      {
-        title: 'Generate an engagement plan including key strategic questions to be answered and data to be gathered',
-        institutionalTemplate: `Engagement templates, timelines, roles and responsibilities. Notifications, collaborative features, statuses.
-
-Strategic question library structured by Canvas dimension (Where We Play, How We Win, How We Play) — with workflow to prioritise, discard, or park them for the future.
-
-Configurable governance templates: define cadence, roles, approval gates, and deadlines per BU/country unit. Define degrees of freedom and design authority for strategic choices across organisational units.`,
-        cognitiveAutomation: `AI suggests and prioritises strategic questions based on industry context, data availability, and prior-cycle learning.
-
-Industry Expert adapts the standard ontology and question set to the client's specific sector and competitive environment.
-
-AI generates comprehensive lists of data to be gathered (internal and external sources) and interview questionnaires for key internal informants.`,
-      },
-      {
-        title: "Gather and import data to populate the client's knowledge base according to the engagement plan",
-        institutionalTemplate: `Facilitated workflow to connect existing enterprise software to the SiA Platform.
-
-Integration with premium databases (for premium customers).
-
-Import workflows for any non-connected source (documents, interviews, etc.).
-
-Workflows to manage the knowledge base in the Knowledge Graph.`,
-        cognitiveAutomation: `AI searches across connected databases and suggests data sets and reports relevant to the specific engagement (including previews of contents).
-
-AI searches the internet for relevant available data sets.
-
-AI provides insights about data in the KG (conflicts, gaps, duplications, etc.) and helps users cleanse and manage the knowledge base.`,
-      },
-      {
-        title: 'Perform strategic analyses and generate insights efficiently and in a very short time',
-        institutionalTemplate: `Structured libraries of standard analyses. Reusable analytical frameworks (e.g. market matrix, Value Curves) embedded in the platform.
-
-Insights stored and retrieved in the platform (insights libraries), linked to the questions they address and the data used to generate them.
-
-Build custom analyses (beyond the pre-loaded SiA library) and save and re-use them across units or cycles.`,
-        cognitiveAutomation: `AI produces insights in minutes based on the knowledge base in the KG.
-
-Human-in-the-loop workflows ensure quality control, rigour, and relevance.`,
-      },
-      {
-        title: 'Generate reports, documents, or other communication artefacts which can be easily shared with clients for validation',
-        institutionalTemplate: `Report/document templates aligned to the Canvas structure, ensuring consistent format across engagements.
-
-Version-controlled reports with commenting and annotation by clients.
-
-Shareable, permission-controlled views so clients can review and validate without needing platform access.`,
-        cognitiveAutomation: `Communicator agent drafts multiple reports from the structured insight library, assembling insights into coherent and compelling narratives.
-
-Human-in-the-loop workflows ensure quality control prior to sharing with clients.
-
-AI highlights areas where client validation is most needed (data gaps, conflicting signals, high-impact assumptions).`,
-      },
-      {
-        title: 'Generate options for strategic choices, facilitate choices, and help clients frame "From–To" shifts',
-        institutionalTemplate: `Option register per strategic question: options generated, evaluated, chosen, discarded, or parked — with rationale captured.`,
-        cognitiveAutomation: `Strategic Advisor agent generates option sets grounded in theory, precedent, and data — expanding the range of possibilities beyond what the team would consider unaided.
-
-Simulator agent models the financial and competitive implications of each option.`,
-      },
-      {
-        title: 'Manage the end-to-end formulation process to meet deadlines and quality requirements',
-        institutionalTemplate: `Configurable workflow with milestones, ownership, and deadlines per engagement phase.
-
-Progress tracking, quality gates, and validation "stamps".
-
-Dashboard showing process status across all active engagements.`,
-        cognitiveAutomation: `AI quality control: validates completeness of analysis per Canvas dimension, flags strategic questions with insufficient evidence, and alerts when outputs fall below quality thresholds.`,
-      },
-      {
-        title: 'Ensure consistency across business units and engagements',
-        institutionalTemplate: `Standard ontology and methodology templates enforced across all engagements.
-
-Cross-BU comparison views: same Canvas dimensions, same fields, same structure — enabling side-by-side analysis.
-
-Strategy library: past outputs searchable and referenceable for benchmarking.`,
-        cognitiveAutomation: `AI detects variance across BU outputs, flagging where units have diverged from standards or where quality is below average.
-
-AI suggests cross-pollination: "BU X addressed this question in this way — consider reusing the approach for BU Y."`,
-      },
-    ],
-  },
-]
+// ─── Static Canvas Data (personas + vision fetched from API) ─────────────────
 
 const PAINS: CanvasPain[] = [
   { id: 1, title: 'The analytical burden is crushing', description: 'Gathering, processing, and synthesising market data, competitive signals, and internal capabilities requires weeks of manual effort. By the time analysis is ready, some of it is already stale. Every cycle the analyses are repeated from the beginning, without ever building a growing knowledge base.', personaIds: ['elt'] },
@@ -234,8 +85,90 @@ const SUCCESS_ITEMS: CanvasSuccess[] = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function jtbdTitle(j: string | CanvasJTBD): string {
+  return typeof j === 'string' ? j : j.title
+}
+
 function FormulateStrategyContent() {
   const [detailedView, setDetailedView] = useState(false)
+
+  // Vision hooks
+  const { data: visionCard, isLoading: visionCardLoading } = useVisionCard()
+  const { data: visionCallouts, isLoading: calloutsLoading } = useVisionCardCallouts()
+  const updateVisionCard = useUpdateVisionCard()
+  const updateVisionCardCallout = useUpdateVisionCardCallout()
+  const addVisionCardCallout = useAddVisionCardCallout()
+
+  // Persona hooks
+  const { data: personaItems, isLoading: personasItemsLoading } = usePersonas()
+  const { data: jtbdItems, isLoading: jtbdsLoading } = usePersonaJTBDs()
+  const updatePersona = useUpdatePersona()
+  const addPersona = useAddPersona()
+  const updatePersonaJTBD = useUpdatePersonaJTBD()
+  const addPersonaJTBD = useAddPersonaJTBD()
+
+  const visionLoading = visionCardLoading || calloutsLoading
+  const personasLoading = personasItemsLoading || jtbdsLoading
+
+  // Map VisionCard
+  const visionStatement = visionCard?.title ?? ''
+  const visionDetail = visionCard?.description ?? ''
+  const visionCallout = visionCallouts?.[0]
+    ? { label: visionCallouts[0].title ?? '', body: visionCallouts[0].description ?? '' }
+    : undefined
+
+  // Map Personas + JTBDs from API → CanvasPersona[]
+  const personas: CanvasPersona[] = personaItems && jtbdItems
+    ? personaItems.map(p => ({
+        id: String(p.id),
+        label: p.title ?? '',
+        quote: p.description ?? '',
+        jtbds: jtbdItems
+          .filter(j => j.parent_id === p.id)
+          .map(j => (j.subtitle || j.description)
+            ? { title: j.title ?? '', institutionalTemplate: j.subtitle ?? undefined, cognitiveAutomation: j.description ?? undefined } as CanvasJTBD
+            : j.title ?? ''
+          ),
+      }))
+    : []
+
+  function handleSaveVision(vision: { statement: string; detail: string; callout?: { label: string; body: string } }) {
+    if (visionCard) {
+      updateVisionCard.mutate({ id: visionCard.id, data: { title: vision.statement, description: vision.detail } })
+    }
+    if (vision.callout) {
+      if (visionCallouts?.[0]) {
+        updateVisionCardCallout.mutate({ id: visionCallouts[0].id, data: { title: vision.callout.label, description: vision.callout.body } })
+      } else {
+        addVisionCardCallout.mutate({ type: 'vision_card_callout', title: vision.callout.label, subtitle: null, description: vision.callout.body, order_value: 1, parent_id: null })
+      }
+    }
+  }
+
+  function handleSavePersonas(updatedPersonas: CanvasPersona[]) {
+    updatedPersonas.forEach((persona, pIndex) => {
+      const numId = Number(persona.id)
+      const personaData = { title: persona.label, description: persona.quote, order_value: pIndex + 1 }
+      if (!isNaN(numId)) {
+        updatePersona.mutate({ id: numId, data: personaData })
+        // Update JTBDs for existing persona
+        persona.jtbds.forEach((jtbd, jIndex) => {
+          const title = jtbdTitle(jtbd)
+          const inst = typeof jtbd !== 'string' ? jtbd.institutionalTemplate ?? null : null
+          const cog = typeof jtbd !== 'string' ? jtbd.cognitiveAutomation ?? null : null
+          const existingJtbd = jtbdItems?.filter(j => j.parent_id === numId)[jIndex]
+          if (existingJtbd) {
+            updatePersonaJTBD.mutate({ id: existingJtbd.id, data: { title, subtitle: inst, description: cog, order_value: jIndex + 1 } })
+          } else {
+            addPersonaJTBD.mutate({ type: 'persona_jtbd', title, subtitle: inst, description: cog, order_value: jIndex + 1, parent_id: numId })
+          }
+        })
+      } else {
+        addPersona.mutate({ type: 'persona', ...personaData, subtitle: null, parent_id: null })
+      }
+    })
+  }
+
   return (
     <>
       <PageHeader
@@ -262,15 +195,19 @@ function FormulateStrategyContent() {
           <VisionCanvas
             accent="primary"
             canvasId="formulate"
-            visionStatement="A world where strategy formulation is a structured, AI-augmented capability — not a once-every-few-years ordeal trapped in consultants' laptops and slide decks."
-            visionDetail="The platform enables any organisation to activate full strategic rigour on demand: data-to-insight in hours, choices that are explicit and auditable, and a shared language that turns individual expertise into institutional capital."
-            visionCallout={{ label: 'The Strategy Digital Twin', body: 'At the technological heart of the platform is a living, machine-readable mirror of the organisation\'s strategy — capturing data, goals, assumptions, options, and plans in a unified Knowledge Graph. It powers seven agentic services through a Strategy Co-Pilot: Industry Expert, Researcher, Business Analyst, Communicator, Simulator, Programme Manager, and Strategic Advisor.' }}
-            personas={PERSONAS}
+            visionStatement={visionStatement}
+            visionDetail={visionDetail}
+            visionCallout={visionCallout}
+            personas={personas}
             pains={PAINS}
             painSubtitle="Strategy formulation is trapped in an artisanal model — depending on consultants' skills, ad-hoc spreadsheets, and PowerPoint decks assembled under time pressure."
             solutions={SOLUTIONS}
             successItems={SUCCESS_ITEMS}
             detailedView={detailedView}
+            onSaveVision={handleSaveVision}
+            visionLoading={visionLoading}
+            onSavePersonas={handleSavePersonas}
+            personasLoading={personasLoading}
           />
         </CommentableRegion>
         <CommentsPanel />
