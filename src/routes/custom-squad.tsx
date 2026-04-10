@@ -4,7 +4,7 @@ import { ExportButton } from '#/components/ExportButton'
 import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton } from '#/components/CommentingSystem'
-import type { CanvasPersona, CanvasPain, CanvasPoint, CanvasSuccess } from '#/components/VisionCanvas'
+import type { CanvasPersona, CanvasPain, CanvasSuccess } from '#/components/VisionCanvas'
 
 export const Route = createFileRoute('/custom-squad')({ component: CustomSquadPage })
 
@@ -16,10 +16,6 @@ const EMPTY_PERSONAS: CanvasPersona[] = [
 
 const EMPTY_PAINS: CanvasPain[] = [
   { id: 1, title: '', description: '' },
-]
-
-const EMPTY_PRODUCT_POINTS: CanvasPoint[] = [
-  { headline: '', detail: '' },
 ]
 
 const EMPTY_SUCCESS_ITEMS: CanvasSuccess[] = [
@@ -49,7 +45,6 @@ function CustomSquadContent() {
             visionDetail=""
             personas={EMPTY_PERSONAS}
             pains={EMPTY_PAINS}
-            productPoints={EMPTY_PRODUCT_POINTS}
             successItems={EMPTY_SUCCESS_ITEMS}
           />
         </CommentableRegion>

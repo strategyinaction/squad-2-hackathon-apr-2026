@@ -22,8 +22,6 @@ import {
   Lan,
   School,
   ArrowForward,
-  ThumbUp,
-  Groups,
   EmojiObjects,
   Edit,
   Add,
@@ -85,21 +83,6 @@ function coreFunctionsTitle(count: number) {
   if (count === 0) return 'No Core Functions'
   return `${word} Core ${count === 1 ? 'Function' : 'Functions'}`
 }
-
-const INITIAL_FUNCTIONS: CoreFunction[] = [
-  {
-    id: '1',
-    title: 'Institutional Template',
-    body: 'Shared language, process governance, accountability structures, and collaboration layer. Creates coordination, control, and trust across the organisation.',
-    isPrimary: true,
-  },
-  {
-    id: '2',
-    title: 'Cognitive Engine (AI)',
-    body: 'Gathers, analyses, synthesises, and supports judgement. Makes strategic work better, faster, and cheaper — removing the final barrier to great strategy execution.',
-    isPrimary: false,
-  },
-]
 
 const INITIAL_SQUADS: Squad[] = [
   {
@@ -190,10 +173,6 @@ function TypeBadge({ type }: { type: 'idea' | 'challenge' | 'feedback' | 'questi
   const styles = { idea: 'bg-primary-faded text-primary', challenge: 'bg-destructive-faded text-destructive', feedback: 'bg-warning-faded text-warning', question: 'bg-muted text-muted-foreground' }
   const labels = { idea: 'Idea', challenge: 'Challenge', feedback: 'Feedback', question: 'Question' }
   return <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-semibold', styles[type])}>{labels[type]}</span>
-}
-
-function InitialsAvatar({ initials }: { initials: string }) {
-  return <div className="w-8 h-8 text-xs rounded-full bg-primary-faded text-primary font-bold flex items-center justify-center shrink-0">{initials}</div>
 }
 
 function SectionEditButton({
@@ -580,8 +559,9 @@ function OverviewContent() {
                   {hero.blocks.map(block => (
                     <SortableRow key={block.id} id={block.id}>
                       {({ handleProps }) => (
+                        <CommentableRegion id={`hero-block-${block.id}`} label={block.title} className="rounded-xl min-w-[140px]">
                         <div
-                          className={cn('bg-white/10 border border-white/20 rounded-xl px-4 py-3 relative min-w-[140px] transition-colors', !heroEditing && 'cursor-pointer hover:bg-white/20')}
+                          className={cn('bg-white/10 border border-white/20 rounded-xl px-4 py-3 relative transition-colors', !heroEditing && 'cursor-pointer hover:bg-white/20')}
                           onPointerDown={!heroEditing ? onBlockPointerDown : undefined}
                           onClick={!heroEditing ? (e) => { if (wasClick(e)) setOpenViewBlockId(block.id) } : undefined}
                         >
@@ -614,6 +594,7 @@ function OverviewContent() {
                             </>
                           )}
                         </div>
+                        </CommentableRegion>
                       )}
                     </SortableRow>
                   ))}
@@ -660,6 +641,7 @@ function OverviewContent() {
                   {functions.map((fn, fnIndex) => (
                     <SortableRow key={fn.id} id={fn.id}>
                       {({ handleProps }) => (
+                        <CommentableRegion id={`fn-${fn.id}`} label={fn.title} className="rounded-xl">
                         <div className={cn('rounded-xl border p-5 relative', fnIndex === 0 ? 'bg-primary-faded border-primary/10' : 'bg-shell border-border')}>
                           {functionsEditing ? (
                             <>
@@ -683,6 +665,7 @@ function OverviewContent() {
                             </>
                           )}
                         </div>
+                        </CommentableRegion>
                       )}
                     </SortableRow>
                   ))}
@@ -720,6 +703,7 @@ function OverviewContent() {
                     return (
                       <SortableRow key={squad.id} id={squad.id}>
                         {({ handleProps }) => (
+                          <CommentableRegion id={`squad-${squad.id}`} label={squad.name} className="rounded-xl">
                           <Card className="flex flex-col shadow-xsmall rounded-xl border border-border overflow-hidden">
                             <div className="px-5 pt-5 pb-4 flex-1">
                               <div className="flex items-start justify-between gap-3 mb-4">
@@ -776,7 +760,24 @@ function OverviewContent() {
                                 </Button>
                               </Link>
                             </div>
+                            {ACTIVITY.filter(a => a.squadPath === squad.path).slice(0, 3).map((item, idx, arr) => (
+                              <div
+                                key={item.id}
+                                className={cn('px-4 py-3 flex items-start gap-2.5 bg-white', idx < arr.length - 1 && 'border-b border-border/50')}
+                              >
+                                <div className="w-6 h-6 text-[15px] rounded-full bg-shell border border-border text-heading font-bold flex items-center justify-center shrink-0 mt-0.5">{item.initials}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                    <span className="text-[15px] font-semibold text-heading">{item.author}</span>
+                                    <TypeBadge type={item.type} />
+                                    <span className="text-[14px] text-muted-foreground ml-auto">{item.time}</span>
+                                  </div>
+                                  <p className="text-[15px] text-muted-foreground leading-relaxed line-clamp-2">{item.content}</p>
+                                </div>
+                              </div>
+                            ))}
                           </Card>
+                          </CommentableRegion>
                         )}
                       </SortableRow>
                     )
@@ -796,42 +797,6 @@ function OverviewContent() {
               </SortableContext>
             </DndContext>
           </CommentableRegion>
-
-          {/* ── Recent Contributions — NOT commentable ── */}
-          <div className="rounded-xl border border-border bg-white shadow-xsmall p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Groups className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold text-heading">Recent Contributions</h3>
-              </div>
-              <span className="text-xs text-muted-foreground">26 total across all squads</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {ACTIVITY.map((item) => (
-                <div key={item.id} className="rounded-lg border border-border p-3 hover:border-primary/30 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <InitialsAvatar initials={item.initials} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-xs font-semibold text-heading">{item.author}</span>
-                        <span className="text-xs text-muted-foreground">{item.action} in</span>
-                        <Link to={item.squadPath as '/formulate'} className="text-xs font-semibold text-primary hover:underline">{item.squad}</Link>
-                        <TypeBadge type={item.type} />
-                        <span className="text-xs text-muted-foreground ml-auto">{item.time}</span>
-                      </div>
-                      <p className="text-xs text-foreground leading-relaxed line-clamp-2">{item.content}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <button className="flex items-center gap-1 text-[15px] text-muted-foreground hover:text-primary transition-colors"><ThumbUp className="w-3 h-3" />{item.votes}</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">Navigate to a squad area to add your own ideas, raise challenges, or ask questions.</p>
-            </div>
-          </div>
 
         </div>
 
