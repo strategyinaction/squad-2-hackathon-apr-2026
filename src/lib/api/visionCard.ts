@@ -2,25 +2,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { readItems, updateItem } from '@directus/sdk'
 import { directus, type ContentItem } from '#/lib/directus'
 
-export function useVisionCard() {
+export function useVisionCard(prefix = '') {
+  const type = prefix ? `${prefix}_vision_card` : 'vision_card'
   return useQuery({
-    queryKey: ['vision_card'],
+    queryKey: [type],
     queryFn: async () => {
       const items = await directus.request(
-        readItems('contents', { filter: { type: { _eq: 'vision_card' } }, limit: 1 }),
+        readItems('contents', { filter: { type: { _eq: type } }, limit: 1 }),
       )
       return items[0] ?? null
     },
   })
 }
 
-export function useUpdateVisionCard() {
+export function useUpdateVisionCard(prefix = '') {
+  const type = prefix ? `${prefix}_vision_card` : 'vision_card'
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Omit<ContentItem, 'id' | 'type'>> }) =>
       directus.request(updateItem('contents', id, data)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vision_card'] })
+      queryClient.invalidateQueries({ queryKey: [type] })
     },
   })
 }

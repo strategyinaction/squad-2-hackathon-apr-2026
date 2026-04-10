@@ -129,6 +129,8 @@ export interface VisionCanvasProps {
   detailedView?: boolean;
   onSaveVision?: (vision: { statement: string; detail: string; callout?: { label: string; body: string } }) => void;
   visionLoading?: boolean;
+  onSavePersonas?: (personas: CanvasPersona[]) => void;
+  personasLoading?: boolean;
 }
 
 // ─── Shared item detail ───────────────────────────────────────────────────────
@@ -429,6 +431,8 @@ export function VisionCanvas({
   detailedView = false,
   onSaveVision,
   visionLoading = false,
+  onSavePersonas,
+  personasLoading = false,
 }: VisionCanvasProps) {
   const commentsCtx = useCommentsCtx();
   const panelOpen = commentsCtx?.panelOpen ?? false;
@@ -525,6 +529,7 @@ export function VisionCanvas({
         const updated = prev.filter(id => validIds.has(id));
         return updated.length > 0 ? updated : data.personas.map(p => p.id);
       });
+      onSavePersonas?.(data.personas);
     }
     if (section === 'needs')     { setNeedsSnap(null);     setNeedsEditing(false);     }
     if (section === 'relievers') { setRelieversSnap(null); setRelieversEditing(false); }
@@ -700,7 +705,12 @@ export function VisionCanvas({
       </div>
 
       {/* ── Target Group — full width horizontal ── */}
-      <div className="border-b border-border">
+      <div className="border-b border-border relative">
+        {personasLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
         <div className="px-4 py-3 border-b border-border bg-shell flex items-center gap-2">
           <div className="flex-1 min-w-0">
             <p className={cn('text-xs font-bold uppercase tracking-widest', a.text)}>Target Group</p>
