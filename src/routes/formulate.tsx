@@ -7,6 +7,8 @@ import { LogoutButton } from '#/components/LogoutButton'
 import { VisionCanvas } from '#/components/VisionCanvas'
 import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, type CommentType } from '#/components/CommentingSystem'
 import type { CanvasPersona, CanvasPain, CanvasSuccess, CanvasSolution } from '#/components/VisionCanvas'
+import { useVisionCard, useUpdateVisionCard } from '#/lib/api/visionCard'
+import { useVisionCardCallouts, useUpdateVisionCardCallout, useAddVisionCardCallout } from '#/lib/api/visionCardCallouts'
 
 export const Route = createFileRoute('/formulate')({ component: FormulateStrategyPage })
 
@@ -236,6 +238,38 @@ const SUCCESS_ITEMS: CanvasSuccess[] = [
 
 function FormulateStrategyContent() {
   const [detailedView, setDetailedView] = useState(false)
+  const { data: visionCard, isLoading: visionCardLoading } = useVisionCard()
+  const { data: visionCallouts, isLoading: calloutsLoading } = useVisionCardCallouts()
+  const updateVisionCard = useUpdateVisionCard()
+  const updateVisionCardCallout = useUpdateVisionCardCallout()
+  const addVisionCardCallout = useAddVisionCardCallout()
+
+  const visionLoading = visionCardLoading || calloutsLoading
+
+  // Map VisionCard BE fields → FE props (title → visionStatement, description → visionDetail)
+  const visionStatement = visionCard?.title ?? ''
+  const visionDetail = visionCard?.description ?? ''
+
+  // Map VisionCardCallouts → callout props (title → label, description → body)
+  const visionCallout = visionCallouts?.[0]
+    ? { label: visionCallouts[0].title ?? '', body: visionCallouts[0].description ?? '' }
+    : undefined
+
+  function handleSaveVision(vision: { statement: string; detail: string; callout?: { label: string; body: string } }) {
+    // Persist vision card
+    if (visionCard) {
+      updateVisionCard.mutate({ id: visionCard.id, data: { title: vision.statement, description: vision.detail } })
+    }
+    // Persist callout
+    if (vision.callout) {
+      if (visionCallouts?.[0]) {
+        updateVisionCardCallout.mutate({ id: visionCallouts[0].id, data: { title: vision.callout.label, description: vision.callout.body } })
+      } else {
+        addVisionCardCallout.mutate({ type: 'vision_card_callout', title: vision.callout.label, subtitle: null, description: vision.callout.body, order_value: 1 })
+      }
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -262,15 +296,17 @@ function FormulateStrategyContent() {
           <VisionCanvas
             accent="primary"
             canvasId="formulate"
-            visionStatement="A world where strategy formulation is a structured, AI-augmented capability — not a once-every-few-years ordeal trapped in consultants' laptops and slide decks."
-            visionDetail="The platform enables any organisation to activate full strategic rigour on demand: data-to-insight in hours, choices that are explicit and auditable, and a shared language that turns individual expertise into institutional capital."
-            visionCallout={{ label: 'The Strategy Digital Twin', body: 'At the technological heart of the platform is a living, machine-readable mirror of the organisation\'s strategy — capturing data, goals, assumptions, options, and plans in a unified Knowledge Graph. It powers seven agentic services through a Strategy Co-Pilot: Industry Expert, Researcher, Business Analyst, Communicator, Simulator, Programme Manager, and Strategic Advisor.' }}
+            visionStatement={visionStatement}
+            visionDetail={visionDetail}
+            visionCallout={visionCallout}
             personas={PERSONAS}
             pains={PAINS}
             painSubtitle="Strategy formulation is trapped in an artisanal model — depending on consultants' skills, ad-hoc spreadsheets, and PowerPoint decks assembled under time pressure."
             solutions={SOLUTIONS}
             successItems={SUCCESS_ITEMS}
             detailedView={detailedView}
+            onSaveVision={handleSaveVision}
+            visionLoading={visionLoading}
           />
         </CommentableRegion>
         <CommentsPanel />

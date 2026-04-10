@@ -127,6 +127,8 @@ export interface VisionCanvasProps {
   successItems: CanvasSuccess[];
   solutions?: CanvasSolution[];
   detailedView?: boolean;
+  onSaveVision?: (vision: { statement: string; detail: string; callout?: { label: string; body: string } }) => void;
+  visionLoading?: boolean;
 }
 
 // ─── Shared item detail ───────────────────────────────────────────────────────
@@ -425,6 +427,8 @@ export function VisionCanvas({
   successItems,
   solutions = [],
   detailedView = false,
+  onSaveVision,
+  visionLoading = false,
 }: VisionCanvasProps) {
   const commentsCtx = useCommentsCtx();
   const panelOpen = commentsCtx?.panelOpen ?? false;
@@ -440,6 +444,23 @@ export function VisionCanvas({
     successItems,
     solutions,
   });
+
+  // Sync props into state when they change (e.g. after API data loads)
+  useEffect(() => {
+    setData(d => ({
+      ...d,
+      visionStatement,
+      visionDetail,
+      visionCallout,
+      personas,
+      pains,
+      painSubtitle,
+      painCallout,
+      successItems,
+      solutions,
+    }));
+  }, [visionStatement, visionDetail, visionCallout, personas, pains, painSubtitle, painCallout, successItems, solutions]);
+
   const [activePersonas, setActivePersonas] = useState<string[]>(personas.map(p => p.id));
   const a = ACCENT[accent];
 
@@ -493,7 +514,10 @@ export function VisionCanvas({
   }
 
   function doneEdit(section: Section) {
-    if (section === 'vision')    { setVisionSnap(null);    setVisionEditing(false);    }
+    if (section === 'vision')    {
+      setVisionSnap(null);    setVisionEditing(false);
+      onSaveVision?.({ statement: data.visionStatement, detail: data.visionDetail, callout: data.visionCallout });
+    }
     if (section === 'target') {
       setTargetSnap(null); setTargetEditing(false);
       const validIds = new Set(data.personas.map(p => p.id));
@@ -597,6 +621,11 @@ export function VisionCanvas({
 
       {/* ── Vision row — full width ── */}
       <div className={cn('border-b border-border relative', a.faded)}>
+        {visionLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
         {!panelOpen && (
           <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10" onMouseUp={e => e.stopPropagation()}>
             {visionEditing ? (
