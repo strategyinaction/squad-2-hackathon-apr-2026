@@ -3,6 +3,7 @@ import { useHeader, useUpdateHeader } from '#/lib/api/header'
 import { useHeaderCards, useUpdateHeaderCard, useAddHeaderCard } from '#/lib/api/headerCards'
 import { useCoreFunctionsSection, useUpdateCoreFunctionsSection } from '#/lib/api/coreFunctionsSection'
 import { useCoreFunctions, useUpdateCoreFunction, useAddCoreFunction, useDeleteCoreFunction } from '#/lib/api/coreFunctions'
+import { usePlatformAreas, useUpdatePlatformArea } from '#/lib/api/platformAreas'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
@@ -65,8 +66,8 @@ interface Squad {
   name: string;
   tagline: string;
   description: string;
-  commentCounts: Partial<Record<'idea' | 'feedback' | 'challenge' | 'question', number>>;
   path: string;
+  contentId?: number;
 }
 
 interface SquadUIConfig {
@@ -74,7 +75,7 @@ interface SquadUIConfig {
   accentBg: string;
   fadedBg: string;
   textColor: string;
-  commentCounts: Partial<Record<'idea' | 'feedback' | 'challenge' | 'question', number>>;
+  commentCounts: Squad['commentCounts'];
   path: string;
   contentId?: number;
 }
@@ -120,7 +121,6 @@ const DEFAULT_SQUAD_UI: SquadUIConfig = {
   accentBg: 'bg-muted',
   fadedBg: 'bg-shell',
   textColor: 'text-muted-foreground',
-  commentCounts: {},
   path: '/custom-squad',
 }
 
@@ -341,9 +341,25 @@ function OverviewContent() {
   // ── Platform Areas state ────────────────────────────────────────────────────
   const { data: platformAreasItems } = usePlatformAreas()
   const updatePlatformArea = useUpdatePlatformArea()
+  const { data: allComments } = useComments()
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
+
+  useEffect(() => {
+    if (!platformAreasItems || squadsEditing) return
+    setSquads(platformAreasItems.map((item, index) => {
+      const { commentCounts, path } = SQUAD_UI_CONFIG[index] ?? DEFAULT_SQUAD_UI
+      return {
+        id: String(item.id),
+        name: item.title ?? '',
+        tagline: item.subtitle ?? '',
+        description: item.description ?? '',
+        commentCounts,
+        path,
+      }
+    }))
+  }, [platformAreasItems, squadsEditing])
 
   // ── Block details state ─────────────────────────────────────────────────────
   const [blockDetails, setBlockDetails] = useState<Record<string, ItemDetailData>>({})
