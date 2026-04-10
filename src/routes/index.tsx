@@ -32,7 +32,7 @@ import {
   DragIndicator,
   AttachFile,
 } from '#/icons'
-import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, HighlightedText, type CommentType } from '#/components/CommentingSystem'
+import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, HighlightedText, useCommentsCtx, type CommentType } from '#/components/CommentingSystem'
 import { ItemDetailModal, ItemDetailPanel, type ItemDetailData } from '#/components/VisionCanvas'
 
 export const Route = createFileRoute('/')({ component: OverviewPage })
@@ -322,7 +322,11 @@ function OverviewContent() {
   // ── Platform Areas state ────────────────────────────────────────────────────
   const { data: platformAreasItems } = usePlatformAreas()
   const updatePlatformArea = useUpdatePlatformArea()
-  const { data: allComments } = useComments()
+  const { data: allComments, refetch: refetchComments } = useComments()
+  const commentsCtx = useCommentsCtx()
+  useEffect(() => {
+    if (commentsCtx?.panelOpen) refetchComments()
+  }, [commentsCtx?.panelOpen])
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
