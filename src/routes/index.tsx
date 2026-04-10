@@ -342,7 +342,7 @@ function OverviewContent() {
   // ── Platform Areas state ────────────────────────────────────────────────────
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>(INITIAL_SQUADS)
-  const [squadsSnap, setSquadsSnap] = useState<string | null>(null)
+  const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
 
   // ── Comments from Directus ──────────────────────────────────────────────────
   const { data: platformAreas } = usePlatformAreas()
@@ -438,10 +438,10 @@ function OverviewContent() {
   }
 
   // ── Squads edit lifecycle ───────────────────────────────────────────────────
-  function beginSquadsEdit() { setSquadsSnap(JSON.stringify(squads)); setSquadsEditing(true) }
+  function beginSquadsEdit() { setSquadsSnap([...squads]); setSquadsEditing(true) }
   function doneSquadsEdit() { setSquadsSnap(null); setSquadsEditing(false) }
   function cancelSquadsEdit() {
-    if (squadsSnap) setSquads(JSON.parse(squadsSnap) as Squad[])
+    if (squadsSnap) setSquads(squadsSnap)
     setSquadsSnap(null); setSquadsEditing(false)
   }
 
@@ -488,6 +488,7 @@ function OverviewContent() {
       accentBg: 'bg-muted',
       fadedBg: 'bg-shell',
       textColor: 'text-muted-foreground',
+      commentCounts: {},
       path: '/custom-squad',
     }])
   }
@@ -803,17 +804,6 @@ function OverviewContent() {
                       </SortableRow>
                     )
                   })}
-                  {squadsEditing && (
-                    <button onClick={addSquad} className="rounded-xl border-2 border-dashed border-border bg-white p-6 flex flex-col items-center justify-center gap-3 hover:border-primary/40 hover:bg-shell transition-colors min-h-[180px]">
-                      <div className="w-10 h-10 rounded-xl bg-shell border border-border flex items-center justify-center">
-                        <Add className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-muted-foreground">Add Platform Area</p>
-                        <p className="text-xs text-muted-foreground/70 mt-0.5">Creates a new canvas page</p>
-                      </div>
-                    </button>
-                  )}
                 </div>
               </SortableContext>
             </DndContext>
