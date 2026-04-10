@@ -4,6 +4,7 @@ import { useHeaderCards, useUpdateHeaderCard, useAddHeaderCard } from '#/lib/api
 import { useCoreFunctionsSection, useUpdateCoreFunctionsSection } from '#/lib/api/coreFunctionsSection'
 import { useCoreFunctions, useUpdateCoreFunction, useAddCoreFunction, useDeleteCoreFunction } from '#/lib/api/coreFunctions'
 import { usePlatformAreas, useUpdatePlatformArea } from '#/lib/api/platformAreas'
+import { useComments } from '#/lib/api/comments'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
@@ -66,8 +67,8 @@ interface Squad {
   name: string;
   tagline: string;
   description: string;
-  commentCounts: Partial<Record<'idea' | 'feedback' | 'challenge' | 'question', number>>;
   path: string;
+  contentId: number;
 }
 
 interface SquadUIConfig {
@@ -75,7 +76,6 @@ interface SquadUIConfig {
   accentBg: string;
   fadedBg: string;
   textColor: string;
-  commentCounts: Squad['commentCounts'];
   path: string;
 }
 
@@ -93,60 +93,30 @@ function coreFunctionsTitle(count: number) {
 // Static UI config per position (sorted by order_value from backend).
 // Icon, colours and path are app-level concerns not stored in the backend.
 const SQUAD_UI_CONFIG: SquadUIConfig[] = [
-  {
-    icon: Target as IconComp,
-    accentBg: 'bg-primary',
-    fadedBg: 'bg-primary-faded',
-    textColor: 'text-primary',
-    commentCounts: { idea: 4, feedback: 2, challenge: 1, question: 2 },
-    path: '/formulate',
-  },
-  {
-    icon: Lan as IconComp,
-    accentBg: 'bg-warning',
-    fadedBg: 'bg-warning-faded',
-    textColor: 'text-warning',
-    commentCounts: { idea: 3, feedback: 3, challenge: 2, question: 1 },
-    path: '/plan',
-  },
-  {
-    icon: School as IconComp,
-    accentBg: 'bg-success',
-    fadedBg: 'bg-success-faded',
-    textColor: 'text-success',
-    commentCounts: { idea: 2, feedback: 3, challenge: 2, question: 1 },
-    path: '/learn',
-  },
+  { icon: Target as IconComp, accentBg: 'bg-primary',  fadedBg: 'bg-primary-faded', textColor: 'text-primary',          path: '/formulate' },
+  { icon: Lan    as IconComp, accentBg: 'bg-warning',  fadedBg: 'bg-warning-faded', textColor: 'text-warning',          path: '/plan'      },
+  { icon: School as IconComp, accentBg: 'bg-success',  fadedBg: 'bg-success-faded', textColor: 'text-success',          path: '/learn'     },
 ]
 const DEFAULT_SQUAD_UI: SquadUIConfig = {
   icon: EmojiObjects as IconComp,
   accentBg: 'bg-muted',
   fadedBg: 'bg-shell',
   textColor: 'text-muted-foreground',
-  commentCounts: {},
   path: '/custom-squad',
 }
 
-const ACTIVITY = [
-  { id: 1,  author: 'Sarah Chen',     initials: 'SC', action: 'added an idea',      squad: 'Formulate Strategy', squadPath: '/formulate', content: 'Could we add a "Strategy Confidence Score" that aggregates readiness across Canvas dimensions — giving ELT a single health signal before they commit to a set of choices?', type: 'idea' as const,      votes: 8,  time: '1h ago' },
-  { id: 2,  author: 'Marco Rossi',    initials: 'MR', action: 'raised a challenge', squad: 'Strategic Plan',      squadPath: '/plan',      content: 'Cascade tracking needs to handle 5–6 levels deep for large enterprise clients. The current 3-level assumption breaks for major multinationals with divisional holding structures.', type: 'challenge' as const, votes: 11, time: '3h ago' },
-  { id: 3,  author: 'Amelia Patel',   initials: 'AP', action: 'left feedback',      squad: 'Learn & Adapt',      squadPath: '/learn',     content: 'QBR prep is still too manual. Even with AI brief generation, the data connector gap means analysts are copy-pasting from spreadsheets — the value proposition breaks at that seam.', type: 'feedback' as const,  votes: 14, time: '5h ago' },
-  { id: 4,  author: 'James Wright',   initials: 'JW', action: 'asked a question',   squad: 'Formulate Strategy', squadPath: '/formulate', content: 'How do we handle BU-level formulation when the BU leader doesn\'t want to share competitive intelligence upward? Is there a confidentiality model we need to design for?', type: 'question' as const,  votes: 5,  time: '7h ago' },
-  { id: 5,  author: 'Priya Nair',     initials: 'PN', action: 'raised a challenge', squad: 'Learn & Adapt',      squadPath: '/learn',     content: 'We need to distinguish "learning that changes the plan" from "learning that confirms we\'re on track." The system currently treats all insights the same — that flattens the signal.', type: 'challenge' as const, votes: 9,  time: '1d ago' },
-  { id: 6,  author: 'Tom Eriksson',   initials: 'TE', action: 'added an idea',      squad: 'Strategic Plan',     squadPath: '/plan',      content: 'Plan charters could auto-generate a one-page board-pack summary. Executives already have the data — they just need it pre-composed in the right format and at the right altitude.', type: 'idea' as const,      votes: 7,  time: '1d ago' },
-  { id: 7,  author: 'Lena Fischer',   initials: 'LF', action: 'left feedback',      squad: 'Formulate Strategy', squadPath: '/formulate', content: 'The Where to Play / How to Win framework is powerful but needs a "confidence level" per choice — right now there\'s no way to surface which hypotheses are weakest going into the review.', type: 'feedback' as const,  votes: 6,  time: '1d ago' },
-  { id: 8,  author: 'David Okafor',   initials: 'DO', action: 'left feedback',      squad: 'Strategic Plan',     squadPath: '/plan',      content: 'Financial links feel underdeveloped. If OKRs move but the budget doesn\'t follow, the plan becomes fiction. We need a tighter loop between hypothesis confidence and resource allocation.', type: 'feedback' as const,  votes: 10, time: '2d ago' },
-  { id: 9,  author: 'Clara Mendes',   initials: 'CM', action: 'left feedback',      squad: 'Learn & Adapt',      squadPath: '/learn',     content: 'The double-loop distinction is the right mental model, but it needs to be more visible in the UI. Users won\'t naturally think in those terms — the platform needs to prompt it explicitly.', type: 'feedback' as const,  votes: 8,  time: '2d ago' },
-  { id: 10, author: 'James Wright',   initials: 'JW', action: 'asked a question',   squad: 'Formulate Strategy', squadPath: '/formulate', content: 'What\'s the right cadence for revisiting Where to Play choices once the plan is live? Annual feels too slow but monthly would create noise. Is there a trigger-based model here?', type: 'question' as const,  votes: 4,  time: '2d ago' },
-  { id: 11, author: 'Sarah Chen',     initials: 'SC', action: 'added an idea',      squad: 'Formulate Strategy', squadPath: '/formulate', content: 'What if the Strategy Digital Twin could simulate "what if we abandoned this bet" — showing the ripple effect on OKRs, resources, and downstream plans before the decision is made?', type: 'idea' as const,      votes: 12, time: '3d ago' },
-  { id: 12, author: 'Tom Eriksson',   initials: 'TE', action: 'added an idea',      squad: 'Strategic Plan',     squadPath: '/plan',      content: 'Charter templates should adapt by industry vertical. A retail cascade looks very different from a professional services one — forcing one template creates friction and poor adoption.', type: 'idea' as const,      votes: 5,  time: '3d ago' },
-  { id: 13, author: 'Priya Nair',     initials: 'PN', action: 'added an idea',      squad: 'Learn & Adapt',      squadPath: '/learn',     content: 'Could we surface a "learning velocity" metric per team — how quickly they move from signal to insight to decision? That would identify coaching opportunities before they become performance issues.', type: 'idea' as const,      votes: 7,  time: '3d ago' },
-  { id: 14, author: 'Marco Rossi',    initials: 'MR', action: 'raised a challenge', squad: 'Strategic Plan',     squadPath: '/plan',      content: 'Plan ownership needs to handle matrix structures — many of our target accounts have plans owned jointly across functions. A single "owner" field won\'t capture that accountability model.', type: 'challenge' as const, votes: 8,  time: '4d ago' },
-  { id: 15, author: 'Lena Fischer',   initials: 'LF', action: 'added an idea',      squad: 'Formulate Strategy', squadPath: '/formulate', content: 'Scenario comparison should let you overlay two strategic options side by side — same canvas structure, different choices — so ELT can do a direct trade-off review in the room.', type: 'idea' as const,      votes: 9,  time: '4d ago' },
-  { id: 16, author: 'Amelia Patel',   initials: 'AP', action: 'left feedback',      squad: 'Strategic Plan',     squadPath: '/plan',      content: 'The hypothesis health indicator is a great concept, but "red / amber / green" isn\'t enough — teams need to see the trend direction and the evidence that drove the last status change.', type: 'feedback' as const,  votes: 11, time: '4d ago' },
-  { id: 17, author: 'David Okafor',   initials: 'DO', action: 'asked a question',   squad: 'Strategic Plan',     squadPath: '/plan',      content: 'How does the platform handle plans that span multiple strategic cycles? Some initiatives take 3–5 years — they shouldn\'t get reset every time the annual strategy refresh runs.', type: 'question' as const,  votes: 6,  time: '5d ago' },
-  { id: 18, author: 'Clara Mendes',   initials: 'CM', action: 'left feedback',      squad: 'Formulate Strategy', squadPath: '/formulate', content: 'The AI Researcher capability needs to be transparent about its sources. If ELT is going to commit to choices based on AI-synthesised intelligence, they need to be able to audit the evidence trail.', type: 'feedback' as const,  votes: 13, time: '5d ago' },
-]
+function getInitials(author: string): string {
+  return author.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+}
+
+function getRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60_000)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
 
 // ─── SortableRow ──────────────────────────────────────────────────────────────
 
@@ -352,6 +322,7 @@ function OverviewContent() {
   // ── Platform Areas state ────────────────────────────────────────────────────
   const { data: platformAreasItems } = usePlatformAreas()
   const updatePlatformArea = useUpdatePlatformArea()
+  const { data: allComments } = useComments()
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
@@ -359,14 +330,14 @@ function OverviewContent() {
   useEffect(() => {
     if (!platformAreasItems || squadsEditing) return
     setSquads(platformAreasItems.map((item, index) => {
-      const { commentCounts, path } = SQUAD_UI_CONFIG[index] ?? DEFAULT_SQUAD_UI
+      const { path } = SQUAD_UI_CONFIG[index] ?? DEFAULT_SQUAD_UI
       return {
         id: String(item.id),
         name: item.title ?? '',
         tagline: item.subtitle ?? '',
         description: item.description ?? '',
-        commentCounts,
         path,
+        contentId: item.id,
       }
     }))
   }, [platformAreasItems, squadsEditing])
@@ -715,7 +686,7 @@ function OverviewContent() {
                     return (
                       <SortableRow key={squad.id} id={squad.id}>
                         {({ handleProps }) => (
-                          <CommentableRegion id={`squad-${squad.id}`} label={squad.name} className="rounded-xl">
+                          <CommentableRegion id={`squad-${squad.id}`} label={squad.name} contentId={squad.contentId} className="rounded-xl">
                           <Card className="flex flex-col shadow-xsmall rounded-xl border border-border overflow-hidden">
                             <div className="px-5 pt-5 pb-4 flex-1">
                               <div className="flex items-start justify-between gap-3 mb-4">
@@ -753,18 +724,22 @@ function OverviewContent() {
                             </div>
                             <div className={cn('px-5 py-3 border-t border-border flex items-center justify-between', fadedBg)}>
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                {(Object.entries(squad.commentCounts) as Array<[CommentType, number]>)
-                                  .filter(([, count]) => count > 0)
-                                  .map(([type, count]) => (
-                                    <button
-                                      key={type}
-                                      onClick={() => navigate({ to: squad.path as '/formulate', state: { panelOpen: true, typeFilter: type } })}
-                                      className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[15px] font-semibold transition-opacity hover:opacity-75', TYPE_BADGE_STYLES[type])}
-                                    >
-                                      {count} {type}
-                                    </button>
-                                  ))
-                                }
+                                {(() => {
+                                  const counts = (allComments ?? [])
+                                    .filter(c => c.content_id === squad.contentId)
+                                    .reduce((acc, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc }, {} as Partial<Record<CommentType, number>>)
+                                  return (Object.entries(counts) as Array<[CommentType, number]>)
+                                    .filter(([, count]) => count > 0)
+                                    .map(([type, count]) => (
+                                      <button
+                                        key={type}
+                                        onClick={() => navigate({ to: squad.path as '/formulate', state: { panelOpen: true, typeFilter: type } })}
+                                        className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[15px] font-semibold transition-opacity hover:opacity-75', TYPE_BADGE_STYLES[type])}
+                                      >
+                                        {count} {type}
+                                      </button>
+                                    ))
+                                })()}
                               </div>
                               <Link to={squad.path as '/formulate'}>
                                 <Button variant="ghost" size="sm" className="gap-1 text-xs h-7 px-2">
@@ -772,22 +747,27 @@ function OverviewContent() {
                                 </Button>
                               </Link>
                             </div>
-                            {ACTIVITY.filter(a => a.squadPath === squad.path).slice(0, 3).map((item, idx, arr) => (
-                              <div
-                                key={item.id}
-                                className={cn('px-4 py-3 flex items-start gap-2.5 bg-white', idx < arr.length - 1 && 'border-b border-border/50')}
-                              >
-                                <div className="w-6 h-6 text-[15px] rounded-full bg-shell border border-border text-heading font-bold flex items-center justify-center shrink-0 mt-0.5">{item.initials}</div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                                    <span className="text-[15px] font-semibold text-heading">{item.author}</span>
-                                    <TypeBadge type={item.type} />
-                                    <span className="text-[14px] text-muted-foreground ml-auto">{item.time}</span>
+                            {(() => {
+                              if (!allComments) return null
+                              const squadComments = allComments.filter(c => c.content_id === squad.contentId).slice(0, 3)
+                              if (squadComments.length === 0) return null
+                              return squadComments.map((item, idx, arr) => (
+                                <div
+                                  key={item.id}
+                                  className={cn('px-4 py-3 flex items-start gap-2.5 bg-white', idx < arr.length - 1 && 'border-b border-border/50')}
+                                >
+                                  <div className="w-6 h-6 text-[15px] rounded-full bg-shell border border-border text-heading font-bold flex items-center justify-center shrink-0 mt-0.5">{getInitials(item.author)}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                      <span className="text-[15px] font-semibold text-heading">{item.author}</span>
+                                      <TypeBadge type={item.type} />
+                                      <span className="text-[14px] text-muted-foreground ml-auto">{getRelativeTime(item.date_created)}</span>
+                                    </div>
+                                    <p className="text-[15px] text-muted-foreground leading-relaxed line-clamp-2">{item.text}</p>
                                   </div>
-                                  <p className="text-[15px] text-muted-foreground leading-relaxed line-clamp-2">{item.content}</p>
                                 </div>
-                              </div>
-                            ))}
+                              ))
+                            })()}
                           </Card>
                           </CommentableRegion>
                         )}

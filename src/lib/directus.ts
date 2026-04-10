@@ -11,8 +11,18 @@ export interface ContentItem {
   parent_id: number | null
 }
 
+export interface CommentItem {
+  id: number
+  content_id: number
+  author: string
+  type: 'idea' | 'feedback' | 'challenge' | 'question'
+  text: string
+  date_created: string
+}
+
 interface DirectusSchema {
   contents: ContentItem[]
+  comments: CommentItem[]
 }
 
 export const directus = createDirectus<DirectusSchema>(

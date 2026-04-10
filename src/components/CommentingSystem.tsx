@@ -12,6 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { createPortal } from 'react-dom';
 import { cn } from '#/lib/utils';
 import { AttachFile, CheckCircle, ChevronRight, Close, ModeComment, ThumbUp } from '#/icons';
+import { useAuth } from '#/lib/AuthContext';
+import { useCreateComment } from '#/lib/api/comments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -333,11 +335,13 @@ export function CommentableRegion({
   label,
   children,
   className,
+  contentId,
 }: {
   id: string;
   label: string;
   children: React.ReactNode;
   className?: string;
+  contentId?: number;
 }) {
   const ctx = useContext(CommentsContext);
   const regionRef = useRef<HTMLDivElement>(null);
@@ -419,6 +423,7 @@ export function CommentableRegion({
         <BlockCommentPopover
           sectionId={id}
           sectionLabel={label}
+          contentId={contentId}
           x={pendingPos.x}
           y={pendingPos.y}
           onClose={() => { setPendingPos(null); setHovered(false); }}
@@ -434,17 +439,21 @@ export function CommentableRegion({
 function BlockCommentPopover({
   sectionId,
   sectionLabel,
+  contentId,
   x,
   y,
   onClose,
 }: {
   sectionId: string;
   sectionLabel: string;
+  contentId?: number;
   x: number;
   y: number;
   onClose: () => void;
 }) {
   const { addComment } = useComments();
+  const { user } = useAuth();
+  const createComment = useCreateComment();
   const [commentType, setCommentType] = useState<CommentType>('idea');
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -464,14 +473,19 @@ function BlockCommentPopover({
 
   function submit() {
     if (!body.trim()) return;
+    const authorName = user?.displayName ?? user?.email ?? 'Anonymous';
+    const initials = authorName.split(' ').filter(Boolean).slice(0, 2).map((w: string) => w[0].toUpperCase()).join('');
+    if (contentId !== undefined) {
+      createComment.mutate({ content_id: contentId, author: authorName, type: commentType, text: body.trim() });
+    }
     addComment({
       sectionId,
       sectionLabel,
       selectedText: '',
       body: body.trim(),
       type: commentType,
-      author: 'You',
-      initials: 'YO',
+      author: authorName,
+      initials,
       createdAt: 'just now',
       attachments,
     });
