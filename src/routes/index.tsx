@@ -32,7 +32,7 @@ import {
   DragIndicator,
   AttachFile,
 } from '#/icons'
-import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, HighlightedText, type CommentType } from '#/components/CommentingSystem'
+import { CommentProvider, CommentableRegion, CommentsPanel, CommentsToggleButton, HighlightedText, useCommentsCtx, type CommentType } from '#/components/CommentingSystem'
 import { ItemDetailModal, ItemDetailPanel, type ItemDetailData } from '#/components/VisionCanvas'
 
 export const Route = createFileRoute('/')({ component: OverviewPage })
@@ -322,7 +322,8 @@ function OverviewContent() {
   // ── Platform Areas state ────────────────────────────────────────────────────
   const { data: platformAreasItems } = usePlatformAreas()
   const updatePlatformArea = useUpdatePlatformArea()
-  const { data: allComments } = useComments()
+  const { data: allComments, refetch: refetchComments } = useComments()
+  const commentsCtx = useCommentsCtx()
   const [squadsEditing, setSquadsEditing] = useState(false)
   const [squads, setSquads] = useState<Squad[]>([])
   const [squadsSnap, setSquadsSnap] = useState<Squad[] | null>(null)
@@ -341,6 +342,47 @@ function OverviewContent() {
       }
     }))
   }, [platformAreasItems, squadsEditing])
+
+  // ── Sync Directus comments into panel context when panel opens ──────────────
+  useEffect(() => {
+    if (!commentsCtx?.panelOpen) return
+    refetchComments().then(({ data }) => {
+      if (!data) return
+      // Build content_id → { sectionId, sectionLabel } map from all known entities
+      const sectionMap = new Map<number, { sectionId: string; sectionLabel: string }>()
+      if (headerItem) sectionMap.set(headerItem.id, { sectionId: 'overview-hero', sectionLabel: 'Vision & Positioning' })
+      hero.blocks.forEach(b => {
+        const n = Number(b.id)
+        if (!isNaN(n)) sectionMap.set(n, { sectionId: `hero-block-${b.id}`, sectionLabel: b.title })
+      })
+      if (coreFunctionsSectionItem) sectionMap.set(coreFunctionsSectionItem.id, { sectionId: 'overview-functions', sectionLabel: 'Core Functions' })
+      functions.forEach(fn => {
+        const n = Number(fn.id)
+        if (!isNaN(n)) sectionMap.set(n, { sectionId: `fn-${fn.id}`, sectionLabel: fn.title })
+      })
+      squads.forEach(sq => sectionMap.set(sq.contentId, { sectionId: `squad-${sq.id}`, sectionLabel: sq.name }))
+      const mapped = data.map(item => {
+        const section = sectionMap.get(item.content_id) ?? { sectionId: String(item.content_id), sectionLabel: 'Unknown' }
+        const initials = item.author.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+        return {
+          id: String(item.id),
+          type: item.type,
+          sectionId: section.sectionId,
+          sectionLabel: section.sectionLabel,
+          selectedText: '',
+          body: item.text,
+          author: item.author,
+          initials,
+          createdAt: getRelativeTime(item.date_created),
+          likes: 0,
+          liked: false,
+          resolved: false,
+          attachments: [],
+        }
+      })
+      commentsCtx.loadComments(mapped)
+    })
+  }, [commentsCtx?.panelOpen])
 
   // ── Block details state ─────────────────────────────────────────────────────
   const [blockDetails, setBlockDetails] = useState<Record<string, ItemDetailData>>({})
@@ -497,7 +539,7 @@ function OverviewContent() {
         <div className="flex-1 min-w-0">
 
           {/* ── Hero ── */}
-          <CommentableRegion id="overview-hero" label="Vision & Positioning" className="rounded-2xl bg-primary text-white p-8 mb-6 relative">
+          <CommentableRegion id="overview-hero" label="Vision & Positioning" contentId={headerItem?.id} className="rounded-2xl bg-primary text-white p-8 mb-6 relative">
 
             {/* Hero edit controls */}
             <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10" onMouseUp={e => e.stopPropagation()}>
@@ -542,7 +584,7 @@ function OverviewContent() {
                   {hero.blocks.map(block => (
                     <SortableRow key={block.id} id={block.id}>
                       {({ handleProps }) => (
-                        <CommentableRegion id={`hero-block-${block.id}`} label={block.title} className="rounded-xl min-w-[140px]">
+                        <CommentableRegion id={`hero-block-${block.id}`} label={block.title} contentId={Number(block.id)} className="rounded-xl min-w-[140px]">
                         <div
                           className={cn('bg-white/10 border border-white/20 rounded-xl px-4 py-3 relative transition-colors', !heroEditing && 'cursor-pointer hover:bg-white/20')}
                           onPointerDown={!heroEditing ? onBlockPointerDown : undefined}
@@ -593,7 +635,7 @@ function OverviewContent() {
           </CommentableRegion>
 
           {/* ── Two Core Functions ── */}
-          <CommentableRegion id="overview-functions" label={coreFunctionsTitle(functions.length)} className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
+          <CommentableRegion id="overview-functions" label={coreFunctionsTitle(functions.length)} contentId={coreFunctionsSectionItem?.id} className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
             <div className="flex items-center justify-between gap-2 mb-5">
               <div className="flex items-center gap-2">
                 <EmojiObjects className="w-5 h-5 text-primary" />
@@ -624,7 +666,7 @@ function OverviewContent() {
                   {functions.map((fn, fnIndex) => (
                     <SortableRow key={fn.id} id={fn.id}>
                       {({ handleProps }) => (
-                        <CommentableRegion id={`fn-${fn.id}`} label={fn.title} className="rounded-xl">
+                        <CommentableRegion id={`fn-${fn.id}`} label={fn.title} contentId={Number(fn.id)} className="rounded-xl">
                         <div className={cn('rounded-xl border p-5 relative', fnIndex === 0 ? 'bg-primary-faded border-primary/10' : 'bg-shell border-border')}>
                           {functionsEditing ? (
                             <>
