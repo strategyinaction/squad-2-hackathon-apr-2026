@@ -1,6 +1,8 @@
 import { type ComponentType, useEffect, useRef, useState } from 'react'
 import { useHeader, useUpdateHeader } from '#/lib/api/header'
 import { useHeaderCards, useUpdateHeaderCard, useAddHeaderCard } from '#/lib/api/headerCards'
+import { useCoreFunctionsSection, useUpdateCoreFunctionsSection } from '#/lib/api/coreFunctionsSection'
+import { useCoreFunctions, useUpdateCoreFunction, useAddCoreFunction, useDeleteCoreFunction } from '#/lib/api/coreFunctions'
 import { Link, useNavigate, createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '#/components/PageHeader'
 import { ExportButton } from '#/components/ExportButton'
@@ -76,6 +78,13 @@ interface Squad {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const EMPTY_HERO: HeroData = { eyebrow: '', title: '', description: '', blocks: [] }
+
+const COUNT_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+function coreFunctionsTitle(count: number) {
+  const word = COUNT_WORDS[count] ?? String(count)
+  if (count === 0) return 'No Core Functions'
+  return `${word} Core ${count === 1 ? 'Function' : 'Functions'}`
+}
 
 const INITIAL_FUNCTIONS: CoreFunction[] = [
   {
@@ -334,10 +343,31 @@ function OverviewContent() {
   }, [headerCards, heroEditing])
 
   // ── Two Core Functions state ────────────────────────────────────────────────
+  const { data: coreFunctionsSectionItem } = useCoreFunctionsSection()
+  const updateCoreFunctionsSection = useUpdateCoreFunctionsSection()
+  const { data: coreFunctionsItems } = useCoreFunctions()
+  const updateCoreFunction = useUpdateCoreFunction()
+  const addCoreFunction = useAddCoreFunction()
+  const deleteCoreFunction = useDeleteCoreFunction()
   const [functionsEditing, setFunctionsEditing] = useState(false)
-  const [functions, setFunctions] = useState<CoreFunction[]>(INITIAL_FUNCTIONS)
-  const [functionsDescription, setFunctionsDescription] = useState('The platform is built on two foundational capabilities that operate in concert — one providing institutional structure, the other cognitive power.')
+  const [functions, setFunctions] = useState<CoreFunction[]>([])
+  const [functionsDescription, setFunctionsDescription] = useState('')
   const [functionsSnap, setFunctionsSnap] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!coreFunctionsSectionItem) return
+    setFunctionsDescription(coreFunctionsSectionItem.description ?? '')
+  }, [coreFunctionsSectionItem])
+
+  useEffect(() => {
+    if (!coreFunctionsItems || functionsEditing) return
+    setFunctions(coreFunctionsItems.map((item, index) => ({
+      id: String(item.id),
+      title: item.title ?? '',
+      body: item.description ?? '',
+      isPrimary: index === 0,
+    })))
+  }, [coreFunctionsItems, functionsEditing])
 
   // ── Platform Areas state ────────────────────────────────────────────────────
   const [squadsEditing, setSquadsEditing] = useState(false)
@@ -390,7 +420,26 @@ function OverviewContent() {
 
   // ── Functions edit lifecycle ────────────────────────────────────────────────
   function beginFunctionsEdit() { setFunctionsSnap(JSON.stringify(functions)); setFunctionsEditing(true) }
-  function doneFunctionsEdit() { setFunctionsSnap(null); setFunctionsEditing(false) }
+  function doneFunctionsEdit() {
+    setFunctionsSnap(null)
+    setFunctionsEditing(false)
+    if (coreFunctionsSectionItem) {
+      updateCoreFunctionsSection.mutate({ id: coreFunctionsSectionItem.id, data: { description: functionsDescription } })
+    }
+    const currentIds = new Set(functions.map(fn => Number(fn.id)).filter(id => !isNaN(id)))
+    coreFunctionsItems?.forEach(item => {
+      if (!currentIds.has(item.id)) deleteCoreFunction.mutate(item.id)
+    })
+    functions.forEach((fn, index) => {
+      const numId = Number(fn.id)
+      const fnData = { order_value: index, title: fn.title, description: fn.body }
+      if (!isNaN(numId)) {
+        updateCoreFunction.mutate({ id: numId, data: fnData })
+      } else {
+        addCoreFunction.mutate({ type: 'core_function', ...fnData })
+      }
+    })
+  }
   function cancelFunctionsEdit() {
     if (functionsSnap) setFunctions(JSON.parse(functionsSnap) as CoreFunction[])
     setFunctionsSnap(null); setFunctionsEditing(false)
@@ -580,11 +629,11 @@ function OverviewContent() {
           </CommentableRegion>
 
           {/* ── Two Core Functions ── */}
-          <CommentableRegion id="overview-functions" label="Two Core Functions" className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
+          <CommentableRegion id="overview-functions" label={coreFunctionsTitle(functions.length)} className="rounded-xl border border-border bg-white shadow-xsmall p-6 mb-6">
             <div className="flex items-center justify-between gap-2 mb-5">
               <div className="flex items-center gap-2">
                 <EmojiObjects className="w-5 h-5 text-primary" />
-                <h3 className="text-base font-bold text-heading">Two Core Functions</h3>
+                <h3 className="text-base font-bold text-heading">{coreFunctionsTitle(functions.length)}</h3>
               </div>
               <SectionEditButton
                 editing={functionsEditing}
@@ -638,7 +687,7 @@ function OverviewContent() {
                     </SortableRow>
                   ))}
                   {functionsEditing && (
-                    <button onClick={() => setFunctions(prev => [...prev, { id: Date.now().toString(), title: 'New Function', body: '', isPrimary: false }])} className="flex-1 min-w-[180px] rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 hover:border-primary/40 hover:bg-shell transition-colors">
+                    <button onClick={() => setFunctions(prev => [...prev, { id: `new-${Date.now()}`, title: 'New Function', body: '', isPrimary: false }])} className="flex-1 min-w-[180px] rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 hover:border-primary/40 hover:bg-shell transition-colors">
                       <Add className="w-5 h-5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground font-semibold">Add function</span>
                     </button>
